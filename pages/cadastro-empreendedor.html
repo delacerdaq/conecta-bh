@@ -39,7 +39,8 @@
     <section>
       <div class="container" style="max-width: 600px;">
         <h2>Dados Pessoais</h2>
-        <form>
+        <div id="form-feedback" class="form-feedback" role="status" aria-live="polite" style="display:none;"></div>
+        <form id="form-cadastro">
           <div class="form-group">
             <label for="name">Nome Completo</label>
             <input type="text" id="name" name="name" required>
@@ -84,7 +85,7 @@
           </div>
 
           <div class="mt-3">
-            <button type="submit" class="btn btn-primary" style="width: 100%;">Cadastrar</button>
+            <button type="submit" id="btn-cadastrar" class="btn btn-primary" style="width: 100%;">Cadastrar</button>
           </div>
         </form>
       </div>
@@ -139,5 +140,6 @@
       </div>
     </div>
   </footer>
+  <script src="../js/cadastro.js"></script>
 </body>
 </html>

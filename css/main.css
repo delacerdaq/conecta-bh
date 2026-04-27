@@ -347,6 +347,26 @@ footer {
   border-top: 1px solid rgba(255, 255, 255, 0.1);
 }
 
+.form-feedback {
+  padding: 1rem 1.5rem;
+  border-radius: var(--border-radius);
+  margin-bottom: 1.5rem;
+  font-size: 0.95rem;
+  font-weight: 400;
+}
+
+.form-feedback.sucesso {
+  background: rgba(153, 225, 38, 0.15);
+  border: 1px solid var(--green);
+  color: #4a7a00;
+}
+
+.form-feedback.erro {
+  background: rgba(253, 95, 132, 0.12);
+  border: 1px solid var(--pink);
+  color: #c0002f;
+}
+
 .social-links {
   display: flex;
   gap: 1rem;
