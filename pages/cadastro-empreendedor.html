@@ -25,6 +25,22 @@
         <a href="cadastro-empreendedor.html" class="active">Cadastro</a>
         <a href="sobre.html">Equipe</a>
       </nav>
+      <div class="user-menu">
+        <div class="user-status" id="user-status">
+          <span id="user-name"></span>
+          <button id="user-menu-toggle" class="user-menu-toggle" aria-label="Menu do usuário">
+            <i class="fa-solid fa-chevron-down"></i>
+          </button>
+          <div id="user-menu-dropdown" class="user-menu-dropdown">
+            <a href="perfil.html" id="menu-perfil"><i class="fa-solid fa-user"></i> Meu Perfil</a>
+            <a href="cadastro-empreendedor.html"><i class="fa-solid fa-briefcase"></i> Novo Negócio</a>
+            <a href="#" id="menu-logout"><i class="fa-solid fa-sign-out-alt"></i> Sair</a>
+          </div>
+        </div>
+        <div id="auth-link">
+          <a href="login.html" class="btn btn-primary" style="margin: 0; padding: 0.6rem 1rem; font-size: 0.9rem;">Entrar</a>
+        </div>
+      </div>
     </div>
   </header>
 
@@ -39,6 +55,7 @@
     <section>
       <div class="container" style="max-width: 600px;">
         <h2>Dados Pessoais</h2>
+        <p class="section-description">Se você estiver logado, nome e email serão preenchidos automaticamente.</p>
         <div id="form-feedback" class="form-feedback" role="status" aria-live="polite" style="display:none;"></div>
         <form id="form-cadastro">
           <div class="form-group">
@@ -51,11 +68,11 @@
           </div>
           <div class="form-group">
             <label for="phone">Telefone</label>
-            <input type="tel" id="phone" name="phone" required>
+            <input type="tel" id="phone" name="phone">
           </div>
           <div class="form-group">
             <label for="cpf">CPF</label>
-            <input type="text" id="cpf" name="cpf" required>
+            <input type="text" id="cpf" name="cpf">
           </div>
 
           <h2>Dados do Negócio</h2>
@@ -96,7 +113,7 @@
         <h2>Já é Membro?</h2>
         <p>Acesse sua conta e gerencie seus produtos e serviços</p>
         <div class="mt-3">
-          <a href="#" class="btn btn-secondary">Fazer Login</a>
+          <a href="login.html" class="btn btn-secondary">Fazer Login</a>
         </div>
       </div>
     </section>
@@ -140,6 +157,7 @@
       </div>
     </div>
   </footer>
+  <script src="../js/menu-usuario.js"></script>
   <script src="../js/cadastro.js"></script>
 </body>
 </html>
