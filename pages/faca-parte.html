@@ -25,6 +25,22 @@
         <a href="cadastro-empreendedor.html">Cadastro</a>
         <a href="sobre.html">Equipe</a>
       </nav>
+      <div class="user-menu">
+        <div class="user-status" id="user-status">
+          <span id="user-name"></span>
+          <button id="user-menu-toggle" class="user-menu-toggle" aria-label="Menu do usuário">
+            <i class="fa-solid fa-chevron-down"></i>
+          </button>
+          <div id="user-menu-dropdown" class="user-menu-dropdown">
+            <a href="perfil.html" id="menu-perfil"><i class="fa-solid fa-user"></i> Meu Perfil</a>
+            <a href="cadastro-empreendedor.html"><i class="fa-solid fa-briefcase"></i> Novo Negócio</a>
+            <a href="#" id="menu-logout"><i class="fa-solid fa-sign-out-alt"></i> Sair</a>
+          </div>
+        </div>
+        <div id="auth-link">
+          <a href="login.html" class="btn btn-primary" style="margin: 0; padding: 0.6rem 1rem; font-size: 0.9rem;">Entrar</a>
+        </div>
+      </div>
     </div>
   </header>
 
@@ -148,5 +164,6 @@
       </div>
     </div>
   </footer>
+  <script src="../js/menu-usuario.js"></script>
 </body>
 </html>

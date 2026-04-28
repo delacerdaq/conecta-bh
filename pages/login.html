@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login / Registro - ConectaBH</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+  <link rel="stylesheet" href="../css/main.css">
+  <style>
+    .auth-container {
+      max-width: 450px;
+      margin: 0 auto;
+    }
+
+    .auth-tabs {
+      display: flex;
+      gap: 0;
+      margin-bottom: 2rem;
+      border-bottom: 2px solid rgba(202, 104, 255, 0.1);
+    }
+
+    .auth-tab {
+      flex: 1;
+      padding: 1rem;
+      text-align: center;
+      cursor: pointer;
+      color: var(--gray);
+      border: none;
+      background: none;
+      font-size: 1rem;
+      font-weight: 400;
+      transition: all 0.3s ease;
+      border-bottom: 3px solid transparent;
+      margin-bottom: -2px;
+    }
+
+    .auth-tab.active {
+      color: var(--purple);
+      border-bottom-color: var(--purple);
+    }
+
+    .auth-tab:hover:not(.active) {
+      color: var(--dark);
+    }
+
+    .auth-form {
+      display: none;
+    }
+
+    .auth-form.active {
+      display: block;
+    }
+
+    .form-group {
+      margin-bottom: 1.5rem;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 0.5rem;
+      color: var(--dark);
+      font-weight: 400;
+    }
+
+    input {
+      width: 100%;
+      padding: 0.8rem 1rem;
+      border: 2px solid rgba(202, 104, 255, 0.2);
+      border-radius: 12px;
+      font-family: inherit;
+      font-size: 1rem;
+      font-weight: 300;
+      transition: all 0.3s ease;
+    }
+
+    input:focus {
+      outline: none;
+      border-color: var(--purple);
+      box-shadow: 0 0 0 3px rgba(202, 104, 255, 0.1);
+    }
+
+    .form-feedback {
+      padding: 1rem 1.5rem;
+      border-radius: 15px;
+      margin-bottom: 1.5rem;
+      font-size: 0.95rem;
+      font-weight: 400;
+    }
+
+    .form-feedback.sucesso {
+      background: rgba(153, 225, 38, 0.15);
+      border: 1px solid var(--green);
+      color: #4a7a00;
+    }
+
+    .form-feedback.erro {
+      background: rgba(253, 95, 132, 0.12);
+      border: 1px solid var(--pink);
+      color: #c0002f;
+    }
+
+    .btn-auth {
+      width: 100%;
+      padding: 0.8rem;
+      font-size: 1rem;
+      border-radius: 12px;
+      border: none;
+      cursor: pointer;
+      font-weight: 400;
+      transition: all 0.3s ease;
+    }
+
+    .btn-auth.primary {
+      background: linear-gradient(135deg, var(--purple) 0%, var(--pink) 100%);
+      color: white;
+    }
+
+    .btn-auth.primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 20px rgba(202, 104, 255, 0.3);
+    }
+
+    .btn-auth:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    .form-link {
+      text-align: center;
+      margin-top: 1.5rem;
+      font-size: 0.95rem;
+    }
+
+    .form-link a {
+      color: var(--purple);
+      text-decoration: none;
+      font-weight: 500;
+    }
+
+    .form-link a:hover {
+      color: var(--pink);
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="header-content">
+      <div class="logo">
+        <a href="../index.html" aria-label="Página inicial ConectaBH">
+          <img src="../images/conectabh-logo.png" alt="ConectaBH">
+        </a>
+      </div>
+      <nav>
+        <a href="../index.html">Início</a>
+        <a href="catalogo.html">Catálogo</a>
+        <a href="empreendedores.html">Empreendedores</a>
+        <a href="encontre-negocios.html">Negócios</a>
+        <a href="calculadora-lucro.html">Calculadora</a>
+        <a href="faca-parte.html">Participar</a>
+        <a href="cadastro-empreendedor.html">Cadastro</a>
+        <a href="sobre.html">Equipe</a>
+      </nav>
+       <div class="user-menu">
+         <div class="user-status" id="user-status" style="display: none;">
+           <span id="user-name"></span>
+           <button id="user-menu-toggle" class="user-menu-toggle" aria-label="Menu do usuário">
+             <i class="fa-solid fa-chevron-down"></i>
+           </button>
+           <div id="user-menu-dropdown" class="user-menu-dropdown">
+             <a href="perfil.html" id="menu-perfil"><i class="fa-solid fa-user"></i> Meu Perfil</a>
+             <a href="cadastro-empreendedor.html"><i class="fa-solid fa-briefcase"></i> Novo Negócio</a>
+             <a href="#" id="menu-logout"><i class="fa-solid fa-sign-out-alt"></i> Sair</a>
+           </div>
+         </div>
+         <div id="auth-link" style="display: none;">
+           <a href="login.html" class="btn btn-primary" style="margin: 0; padding: 0.6rem 1rem; font-size: 0.9rem;">Entrar</a>
+         </div>
+       </div>
+    </div>
+  </header>
+
+  <main>
+    <section class="hero">
+      <div class="container">
+        <h1>Acesse sua Conta</h1>
+        <p>Faça login ou registre-se para começar a vender seus produtos e serviços</p>
+      </div>
+    </section>
+
+    <section>
+      <div class="container auth-container">
+        <div class="auth-tabs">
+          <button class="auth-tab active" data-tab="login">
+            <i class="fa-solid fa-sign-in-alt"></i> Entrar
+          </button>
+          <button class="auth-tab" data-tab="registro">
+            <i class="fa-solid fa-user-plus"></i> Criar Conta
+          </button>
+        </div>
+
+        <!-- Formulário de Login -->
+        <div id="login" class="auth-form active">
+          <div id="feedback-login" class="form-feedback" style="display:none;"></div>
+          <form id="form-login">
+            <div class="form-group">
+              <label for="login-email">Email</label>
+              <input type="email" id="login-email" name="email" required>
+            </div>
+            <div class="form-group">
+              <label for="login-senha">Senha</label>
+              <input type="password" id="login-senha" name="senha" required>
+            </div>
+            <button type="submit" class="btn-auth primary">Entrar</button>
+          </form>
+          <div class="form-link">
+            Não tem conta? <a href="#" onclick="mudarAba('registro'); return false;">Crie uma agora</a>
+          </div>
+        </div>
+
+        <!-- Formulário de Registro -->
+        <div id="registro" class="auth-form">
+          <div id="feedback-registro" class="form-feedback" style="display:none;"></div>
+          <form id="form-registro">
+            <div class="form-group">
+              <label for="registro-nome">Nome Completo</label>
+              <input type="text" id="registro-nome" name="nome" required>
+            </div>
+            <div class="form-group">
+              <label for="registro-email">Email</label>
+              <input type="email" id="registro-email" name="email" required>
+            </div>
+            <div class="form-group">
+              <label for="registro-senha">Senha</label>
+              <input type="password" id="registro-senha" name="senha" required>
+            </div>
+            <div class="form-group">
+              <label for="registro-senha-confirmacao">Confirmar Senha</label>
+              <input type="password" id="registro-senha-confirmacao" name="senha-confirmacao" required>
+            </div>
+            <button type="submit" class="btn-auth primary">Criar Conta</button>
+          </form>
+          <div class="form-link">
+            Já tem conta? <a href="#" onclick="mudarAba('login'); return false;">Faça login</a>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="container">
+      <div class="footer-content">
+        <div class="footer-section">
+          <h4>ConectaBH</h4>
+          <p>A plataforma que conecta oportunidades com empreendedores em Belo Horizonte.</p>
+          <div class="social-links">
+            <a href="#" title="Facebook" aria-label="Facebook"><i class="fa-brands fa-facebook-f"></i></a>
+            <a href="#" title="Instagram" aria-label="Instagram"><i class="fa-brands fa-instagram"></i></a>
+            <a href="#" title="LinkedIn" aria-label="LinkedIn"><i class="fa-brands fa-linkedin-in"></i></a>
+          </div>
+        </div>
+        <div class="footer-section">
+          <h4>Navegação</h4>
+          <a href="../index.html">Início</a>
+          <a href="catalogo.html">Catálogo</a>
+          <a href="empreendedores.html">Empreendedores</a>
+          <a href="sobre.html">Nossa Equipe</a>
+        </div>
+        <div class="footer-section">
+          <h4>Contato</h4>
+          <p><i class="fa-regular fa-envelope"></i> contato@conectabh.com.br</p>
+          <p><i class="fa-solid fa-phone"></i> (31) 99999-9999</p>
+          <p><i class="fa-solid fa-location-dot"></i> Belo Horizonte, MG</p>
+        </div>
+        <div class="footer-section">
+          <h4>Recursos</h4>
+          <a href="calculadora-lucro.html">Calculadora de Lucro</a>
+          <a href="encontre-negocios.html">Encontre Negócios</a>
+          <a href="faca-parte.html">Faça Parte</a>
+        </div>
+      </div>
+      <div class="footer-divider"></div>
+      <div class="footer-bottom">
+        <p>&copy; 2026 ConectaBH. Todos os direitos reservados.</p>
+      </div>
+    </div>
+  </footer>
+
+  <script src="../js/menu-usuario.js"></script>
+  <script src="../js/autenticacao.js"></script>
+</body>
+</html>

@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Meu Perfil - ConectaBH</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+  <link rel="stylesheet" href="../css/main.css">
+  <style>
+    .perfil-container {
+      max-width: 500px;
+      margin: 0 auto;
+    }
+
+    .perfil-card {
+      background: white;
+      border-radius: 15px;
+      padding: 2rem;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+      border: 1px solid rgba(202, 104, 255, 0.1);
+    }
+
+    .perfil-header {
+      text-align: center;
+      margin-bottom: 2rem;
+      padding-bottom: 2rem;
+      border-bottom: 2px solid rgba(202, 104, 255, 0.1);
+    }
+
+    .perfil-avatar {
+      width: 100px;
+      height: 100px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--purple) 0%, var(--pink) 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 2.5rem;
+      color: white;
+      margin: 0 auto 1rem;
+    }
+
+    .perfil-header h1 {
+      color: var(--purple);
+      margin-bottom: 0.5rem;
+      font-size: 1.8rem;
+    }
+
+    .perfil-header p {
+      color: var(--gray);
+      margin: 0;
+    }
+
+    .perfil-info {
+      margin-bottom: 1.5rem;
+    }
+
+    .perfil-info-item {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      padding: 1rem 0;
+      border-bottom: 1px solid rgba(202, 104, 255, 0.08);
+    }
+
+    .perfil-info-item:last-child {
+      border-bottom: none;
+    }
+
+    .perfil-info-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: rgba(202, 104, 255, 0.1);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--purple);
+      flex-shrink: 0;
+    }
+
+    .perfil-info-content {
+      flex: 1;
+    }
+
+    .perfil-info-label {
+      color: var(--gray);
+      font-size: 0.85rem;
+      margin-bottom: 0.25rem;
+    }
+
+    .perfil-info-value {
+      color: var(--dark);
+      font-weight: 500;
+    }
+
+    .perfil-actions {
+      display: flex;
+      gap: 1rem;
+      margin-top: 2rem;
+    }
+
+    .btn-perfil {
+      flex: 1;
+      padding: 0.8rem 1.2rem;
+      border-radius: 12px;
+      border: none;
+      cursor: pointer;
+      font-weight: 400;
+      transition: all 0.3s ease;
+      font-size: 0.95rem;
+    }
+
+    .btn-perfil.primary {
+      background: linear-gradient(135deg, var(--purple) 0%, var(--pink) 100%);
+      color: white;
+    }
+
+    .btn-perfil.primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 20px rgba(202, 104, 255, 0.3);
+    }
+
+    .btn-perfil.secondary {
+      background: rgba(202, 104, 255, 0.1);
+      color: var(--purple);
+      border: 1px solid rgba(202, 104, 255, 0.2);
+    }
+
+    .btn-perfil.secondary:hover {
+      background: rgba(202, 104, 255, 0.15);
+    }
+
+    .btn-perfil.danger {
+      background: rgba(253, 95, 132, 0.1);
+      color: #c0002f;
+      border: 1px solid rgba(253, 95, 132, 0.2);
+    }
+
+    .btn-perfil.danger:hover {
+      background: rgba(253, 95, 132, 0.15);
+    }
+
+    .meus-negocios {
+      margin-top: 3rem;
+      padding-top: 2rem;
+      border-top: 2px solid rgba(202, 104, 255, 0.1);
+    }
+
+    .meus-negocios h2 {
+      color: var(--purple);
+      font-size: 1.5rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .negocio-item {
+      background: rgba(202, 104, 255, 0.05);
+      border-left: 4px solid var(--purple);
+      padding: 1rem;
+      border-radius: 8px;
+      margin-bottom: 1rem;
+    }
+
+    .negocio-item h3 {
+      color: var(--purple);
+      margin-bottom: 0.5rem;
+    }
+
+    .negocio-item p {
+      color: var(--gray);
+      font-size: 0.9rem;
+      margin: 0.25rem 0;
+    }
+
+    .negocio-badge {
+      display: inline-block;
+      background: var(--green);
+      color: var(--dark);
+      padding: 0.3rem 0.8rem;
+      border-radius: 20px;
+      font-size: 0.75rem;
+      font-weight: 500;
+      margin-top: 0.5rem;
+    }
+
+    .sem-negocios {
+      text-align: center;
+      padding: 2rem 1rem;
+      color: var(--gray);
+    }
+
+    .sem-negocios i {
+      font-size: 2rem;
+      margin-bottom: 1rem;
+      opacity: 0.5;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="header-content">
+      <div class="logo">
+        <a href="../index.html" aria-label="Página inicial ConectaBH">
+          <img src="../images/conectabh-logo.png" alt="ConectaBH">
+        </a>
+      </div>
+      <nav>
+        <a href="../index.html">Início</a>
+        <a href="catalogo.html">Catálogo</a>
+        <a href="empreendedores.html">Empreendedores</a>
+        <a href="encontre-negocios.html">Negócios</a>
+        <a href="calculadora-lucro.html">Calculadora</a>
+        <a href="faca-parte.html">Participar</a>
+        <a href="cadastro-empreendedor.html">Cadastro</a>
+        <a href="sobre.html">Equipe</a>
+      </nav>
+      <div class="user-menu">
+        <div class="user-status" id="user-status">
+          <span id="user-name"></span>
+          <button id="user-menu-toggle" class="user-menu-toggle" aria-label="Menu do usuário">
+            <i class="fa-solid fa-chevron-down"></i>
+          </button>
+          <div id="user-menu-dropdown" class="user-menu-dropdown">
+            <a href="perfil.html" id="menu-perfil"><i class="fa-solid fa-user"></i> Meu Perfil</a>
+            <a href="cadastro-empreendedor.html"><i class="fa-solid fa-briefcase"></i> Novo Negócio</a>
+            <a href="#" id="menu-logout"><i class="fa-solid fa-sign-out-alt"></i> Sair</a>
+          </div>
+        </div>
+        <div id="auth-link">
+          <a href="login.html" class="btn btn-primary" style="margin: 0; padding: 0.6rem 1rem; font-size: 0.9rem;">Entrar</a>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <section class="hero">
+      <div class="container">
+        <h1>Meu Perfil</h1>
+        <p>Visualize e gerencie suas informações</p>
+      </div>
+    </section>
+
+    <section>
+      <div class="container perfil-container">
+        <div class="perfil-card">
+          <div class="perfil-header">
+            <div class="perfil-avatar">
+              <i class="fa-solid fa-user"></i>
+            </div>
+            <h1 id="perfil-nome">-</h1>
+            <p id="perfil-email">-</p>
+          </div>
+
+          <div class="perfil-info">
+            <div class="perfil-info-item">
+              <div class="perfil-info-icon">
+                <i class="fa-solid fa-envelope"></i>
+              </div>
+              <div class="perfil-info-content">
+                <div class="perfil-info-label">Email</div>
+                <div class="perfil-info-value" id="info-email">-</div>
+              </div>
+            </div>
+            <div class="perfil-info-item">
+              <div class="perfil-info-icon">
+                <i class="fa-solid fa-calendar"></i>
+              </div>
+              <div class="perfil-info-content">
+                <div class="perfil-info-label">Membro desde</div>
+                <div class="perfil-info-value" id="info-data">-</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="perfil-actions">
+            <a href="cadastro-empreendedor.html" class="btn-perfil primary">
+              <i class="fa-solid fa-plus"></i> Novo Negócio
+            </a>
+            <button id="btn-logout" class="btn-perfil danger">
+              <i class="fa-solid fa-sign-out-alt"></i> Sair
+            </button>
+          </div>
+        </div>
+
+        <div class="meus-negocios">
+          <h2>Meus Negócios</h2>
+          <div id="negocios-lista">
+            <div class="sem-negocios">
+              <i class="fa-solid fa-inbox"></i>
+              <p>Você ainda não cadastrou nenhum negócio.</p>
+              <a href="cadastro-empreendedor.html" class="btn btn-primary" style="margin-top: 1rem;">Criar o seu agora</a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="container">
+      <div class="footer-content">
+        <div class="footer-section">
+          <h4>ConectaBH</h4>
+          <p>A plataforma que conecta oportunidades com empreendedores em Belo Horizonte.</p>
+          <div class="social-links">
+            <a href="#" title="Facebook" aria-label="Facebook"><i class="fa-brands fa-facebook-f"></i></a>
+            <a href="#" title="Instagram" aria-label="Instagram"><i class="fa-brands fa-instagram"></i></a>
+            <a href="#" title="LinkedIn" aria-label="LinkedIn"><i class="fa-brands fa-linkedin-in"></i></a>
+          </div>
+        </div>
+        <div class="footer-section">
+          <h4>Navegação</h4>
+          <a href="../index.html">Início</a>
+          <a href="catalogo.html">Catálogo</a>
+          <a href="empreendedores.html">Empreendedores</a>
+          <a href="sobre.html">Nossa Equipe</a>
+        </div>
+        <div class="footer-section">
+          <h4>Contato</h4>
+          <p><i class="fa-regular fa-envelope"></i> contato@conectabh.com.br</p>
+          <p><i class="fa-solid fa-phone"></i> (31) 99999-9999</p>
+          <p><i class="fa-solid fa-location-dot"></i> Belo Horizonte, MG</p>
+        </div>
+        <div class="footer-section">
+          <h4>Recursos</h4>
+          <a href="calculadora-lucro.html">Calculadora de Lucro</a>
+          <a href="encontre-negocios.html">Encontre Negócios</a>
+          <a href="faca-parte.html">Faça Parte</a>
+        </div>
+      </div>
+      <div class="footer-divider"></div>
+      <div class="footer-bottom">
+        <p>&copy; 2026 ConectaBH. Todos os direitos reservados.</p>
+      </div>
+    </div>
+  </footer>
+
+  <script src="../js/menu-usuario.js"></script>
+  <script src="../js/perfil.js"></script>
+</body>
+</html>
