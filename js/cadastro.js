@@ -248,6 +248,8 @@ form.addEventListener('submit', async (e) => {
     tipoNegocio: document.getElementById('business-type').value,
     descricao: document.getElementById('description').value.trim(),
     endereco: document.getElementById('address').value.trim(),
+    latitude: enderecoSelecionado ? Number(enderecoSelecionado.lat) : null,
+    longitude: enderecoSelecionado ? Number(enderecoSelecionado.lon) : null,
   };
 
   const camposObrigatorios = [
@@ -275,6 +277,8 @@ form.addEventListener('submit', async (e) => {
   }
 
   payload.endereco = addressInput.value.trim();
+  payload.latitude = enderecoSelecionado ? Number(enderecoSelecionado.lat) : null;
+  payload.longitude = enderecoSelecionado ? Number(enderecoSelecionado.lon) : null;
 
   try {
     const res = await fetch(`${API_BASE}/api/empreendedores`, {

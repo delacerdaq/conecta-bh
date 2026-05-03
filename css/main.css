@@ -80,7 +80,7 @@ header {
   padding: 1rem 2rem;
   position: sticky;
   top: 0;
-  z-index: 1000;
+  z-index: 9999;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
@@ -545,6 +545,124 @@ section h2::after {
 
 .address-validation-msg.erro {
   color: #c0002f;
+}
+
+.map-section-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 1.5rem;
+  align-items: flex-start;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.map-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(280px, 1fr);
+  gap: 1.5rem;
+}
+
+.negocios-map {
+  min-height: 460px;
+  border-radius: 18px;
+  overflow: hidden;
+  border: 1px solid rgba(202, 104, 255, 0.14);
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.08);
+  background: rgba(202, 104, 255, 0.04);
+}
+
+.map-selection-info {
+  background: white;
+  border-radius: 18px;
+  border: 1px solid rgba(202, 104, 255, 0.12);
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.06);
+  padding: 1.5rem;
+}
+
+.map-selection-info h3 {
+  color: var(--purple);
+  margin-bottom: 1rem;
+}
+
+.map-selection-info p:last-child {
+  margin-bottom: 0;
+}
+
+.map-selection-region {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.45rem 0.8rem;
+  border-radius: 999px;
+  font-size: 0.85rem;
+  background: rgba(202, 104, 255, 0.08);
+  color: var(--purple-dark);
+  margin-bottom: 1rem;
+}
+
+.map-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem 1rem;
+}
+
+.legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--gray);
+  font-size: 0.9rem;
+}
+
+.legend-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.legend-dot.centro {
+  background: #7400b3;
+}
+
+.legend-dot.pampulha {
+  background: #0081a7;
+}
+
+.legend-dot.savassi {
+  background: #fd5f84;
+}
+
+.legend-dot.funcionarios {
+  background: #99e126;
+}
+
+.legend-dot.lourdes {
+  background: #fea15a;
+}
+
+.map-marker {
+  display: block;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 3px solid white;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
+}
+
+.leaflet-div-icon {
+  background: transparent;
+  border: none;
+}
+
+@media (max-width: 900px) {
+  .map-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .negocios-map {
+    min-height: 360px;
+  }
 }
 
 .perfil-container {

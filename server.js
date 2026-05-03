@@ -178,6 +178,8 @@ app.post('/api/empreendedores', verificarAutenticacao, (req, res) => {
       tipoNegocio: req.body.tipoNegocio || 'outro',
       descricao: req.body.descricao || '',
       endereco: req.body.endereco || '',
+      latitude: Number.isFinite(Number(req.body.latitude)) ? Number(req.body.latitude) : null,
+      longitude: Number.isFinite(Number(req.body.longitude)) ? Number(req.body.longitude) : null,
       dataCadastro: new Date().toISOString(),
     };
 
