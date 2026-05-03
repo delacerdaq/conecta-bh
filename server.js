@@ -10,7 +10,8 @@ const USUARIOS_PATH = path.join(__dirname, 'data', 'usuarios.json');
 const DB_PATH = path.join(__dirname, 'data', 'empreendedores.json');
 
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: '20mb' }));
+app.use(express.urlencoded({ extended: true, limit: '20mb' }));
 app.use(express.static(__dirname));
 
 function verificarAutenticacao(req, res, next) {
@@ -180,6 +181,9 @@ app.post('/api/empreendedores', verificarAutenticacao, (req, res) => {
       endereco: req.body.endereco || '',
       latitude: Number.isFinite(Number(req.body.latitude)) ? Number(req.body.latitude) : null,
       longitude: Number.isFinite(Number(req.body.longitude)) ? Number(req.body.longitude) : null,
+      fotoPerfil: req.body.fotoPerfil || null,
+      galeriaFotos: Array.isArray(req.body.galeriaFotos) ? req.body.galeriaFotos : [],
+      redesSociais: req.body.redesSociais && typeof req.body.redesSociais === 'object' ? req.body.redesSociais : {},
       dataCadastro: new Date().toISOString(),
     };
 

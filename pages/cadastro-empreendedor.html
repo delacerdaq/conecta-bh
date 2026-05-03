@@ -75,6 +75,26 @@
             <input type="text" id="cpf" name="cpf">
           </div>
 
+          <h2>Foto de Perfil</h2>
+          <div class="form-group">
+            <label>Foto do Empreendedor</label>
+            <div class="foto-perfil-upload">
+              <div class="foto-perfil-preview" id="foto-perfil-preview">
+                <i class="fa-solid fa-user"></i>
+              </div>
+              <div class="foto-perfil-actions">
+                <label for="foto-perfil" class="btn btn-outline" style="cursor:pointer;">
+                  <i class="fa-solid fa-camera"></i> Escolher foto
+                </label>
+                <input type="file" id="foto-perfil" name="foto-perfil" accept="image/*" style="display:none;">
+                <button type="button" id="btn-remover-foto-perfil" class="btn btn-outline btn-danger-outline" style="display:none;">
+                  <i class="fa-solid fa-trash"></i> Remover
+                </button>
+                <small class="address-help">Máximo 2 MB · JPG, PNG ou WEBP</small>
+              </div>
+            </div>
+          </div>
+
           <h2>Dados do Negócio</h2>
           <div class="form-group">
             <label for="business-name">Nome do Negócio</label>
@@ -112,6 +132,44 @@
             </div>
             <small id="address-help" class="address-help">Informe o endereço completo da loja (rua, número, bairro e cidade).</small>
             <small id="address-validation-msg" class="address-validation-msg" aria-live="polite"></small>
+          </div>
+
+          <h2>Galeria de Fotos</h2>
+          <div class="form-group">
+            <label>Fotos do Negócio</label>
+            <div class="galeria-upload">
+              <label for="galeria-fotos" class="galeria-dropzone" id="galeria-dropzone">
+                <i class="fa-solid fa-images"></i>
+                <span>Clique para adicionar fotos</span>
+                <small>Máximo 5 fotos · 2 MB cada · JPG, PNG ou WEBP</small>
+                <input type="file" id="galeria-fotos" name="galeria-fotos" accept="image/*" multiple style="display:none;">
+              </label>
+              <div class="galeria-preview-grid" id="galeria-preview-grid"></div>
+            </div>
+          </div>
+
+          <h2>Redes Sociais</h2>
+          <div class="form-group social-links-group">
+            <label class="social-input-label">
+              <i class="fa-brands fa-instagram social-icon instagram"></i>
+              <input type="url" id="social-instagram" name="social-instagram" placeholder="https://instagram.com/seunegocio">
+            </label>
+            <label class="social-input-label">
+              <i class="fa-brands fa-facebook-f social-icon facebook"></i>
+              <input type="url" id="social-facebook" name="social-facebook" placeholder="https://facebook.com/seunegocio">
+            </label>
+            <label class="social-input-label">
+              <i class="fa-brands fa-whatsapp social-icon whatsapp"></i>
+              <input type="url" id="social-whatsapp" name="social-whatsapp" placeholder="https://wa.me/5531999999999">
+            </label>
+            <label class="social-input-label">
+              <i class="fa-brands fa-linkedin-in social-icon linkedin"></i>
+              <input type="url" id="social-linkedin" name="social-linkedin" placeholder="https://linkedin.com/company/seunegocio">
+            </label>
+            <label class="social-input-label">
+              <i class="fa-solid fa-globe social-icon website"></i>
+              <input type="url" id="social-website" name="social-website" placeholder="https://www.seunegocio.com.br">
+            </label>
           </div>
 
           <div class="mt-3">
