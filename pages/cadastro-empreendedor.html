@@ -98,7 +98,20 @@
           </div>
           <div class="form-group">
             <label for="address">Endereço</label>
-            <input type="text" id="address" name="address" required>
+            <div class="address-autocomplete">
+              <input
+                type="text"
+                id="address"
+                name="address"
+                required
+                autocomplete="off"
+                placeholder="Ex: Av. Afonso Pena, 1377 - Centro, Belo Horizonte - MG"
+                aria-describedby="address-help address-validation-msg"
+              >
+              <div id="address-suggestions" class="address-suggestions" role="listbox" aria-label="Sugestões de endereço"></div>
+            </div>
+            <small id="address-help" class="address-help">Informe o endereço completo da loja (rua, número, bairro e cidade).</small>
+            <small id="address-validation-msg" class="address-validation-msg" aria-live="polite"></small>
           </div>
 
           <div class="mt-3">
