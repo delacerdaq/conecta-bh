@@ -20,6 +20,11 @@ let enderecoSelecionado = null;
 let debounceBusca = null;
 let requestController = null;
 
+let fotoPerfilBase64 = null;
+let galeriaBase64 = [];
+const MAX_IMAGEM_BYTES = 2 * 1024 * 1024;
+const MAX_GALERIA_FOTOS = 5;
+
 function verificarAutenticacao() {
   const token = localStorage.getItem('conectabh_token');
   const usuario = localStorage.getItem('conectabh_usuario');
@@ -182,6 +187,95 @@ async function validarEnderecoDigitado() {
   }
 }
 
+function lerArquivoBase64(arquivo) {
+  return new Promise((resolve, reject) => {
+    if (arquivo.size > MAX_IMAGEM_BYTES) {
+      reject(new Error(`A imagem "${arquivo.name}" excede o limite de 2 MB.`));
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = (e) => resolve(e.target.result);
+    reader.onerror = () => reject(new Error('Erro ao ler arquivo.'));
+    reader.readAsDataURL(arquivo);
+  });
+}
+
+const fotoPerfInput  = document.getElementById('foto-perfil');
+const fotoPerfPreview = document.getElementById('foto-perfil-preview');
+const btnRemoverFoto  = document.getElementById('btn-remover-foto-perfil');
+
+fotoPerfInput.addEventListener('change', async () => {
+  const arquivo = fotoPerfInput.files[0];
+  if (!arquivo) return;
+  try {
+    fotoPerfilBase64 = await lerArquivoBase64(arquivo);
+    fotoPerfPreview.innerHTML = `<img src="${fotoPerfilBase64}" alt="Foto de perfil">`;
+    btnRemoverFoto.style.display = 'inline-flex';
+  } catch (err) {
+    alert(err.message);
+    fotoPerfInput.value = '';
+  }
+});
+
+btnRemoverFoto.addEventListener('click', () => {
+  fotoPerfilBase64 = null;
+  fotoPerfInput.value = '';
+  fotoPerfPreview.innerHTML = '<i class="fa-solid fa-user"></i>';
+  btnRemoverFoto.style.display = 'none';
+});
+
+
+const galeriaInput   = document.getElementById('galeria-fotos');
+const galeriaGrid    = document.getElementById('galeria-preview-grid');
+
+function renderGaleriaPreview() {
+  galeriaGrid.innerHTML = galeriaBase64.map((src, idx) => `
+    <div class="galeria-thumb">
+      <img src="${src}" alt="Foto ${idx + 1}">
+      <button type="button" class="galeria-thumb-remove" data-idx="${idx}" aria-label="Remover foto">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+    </div>`).join('');
+}
+
+galeriaGrid.addEventListener('click', (e) => {
+  const btn = e.target.closest('.galeria-thumb-remove');
+  if (!btn) return;
+  const idx = Number(btn.dataset.idx);
+  galeriaBase64.splice(idx, 1);
+  renderGaleriaPreview();
+});
+
+galeriaInput.addEventListener('change', async () => {
+  const arquivos = Array.from(galeriaInput.files);
+  const vagas = MAX_GALERIA_FOTOS - galeriaBase64.length;
+
+  if (vagas <= 0) {
+    alert(`Você já adicionou o máximo de ${MAX_GALERIA_FOTOS} fotos.`);
+    galeriaInput.value = '';
+    return;
+  }
+
+  const selecionados = arquivos.slice(0, vagas);
+  if (arquivos.length > vagas) {
+    alert(`Limite de ${MAX_GALERIA_FOTOS} fotos. Apenas as primeiras ${vagas} foram adicionadas.`);
+  }
+
+  const erros = [];
+  for (const arq of selecionados) {
+    try {
+      const b64 = await lerArquivoBase64(arq);
+      galeriaBase64.push(b64);
+    } catch (err) {
+      erros.push(err.message);
+    }
+  }
+
+  if (erros.length) alert(erros.join('\n'));
+  renderGaleriaPreview();
+  galeriaInput.value = '';
+});
+
 addressInput.addEventListener('input', () => {
   limparEstadoEndereco();
 
@@ -250,6 +344,15 @@ form.addEventListener('submit', async (e) => {
     endereco: document.getElementById('address').value.trim(),
     latitude: enderecoSelecionado ? Number(enderecoSelecionado.lat) : null,
     longitude: enderecoSelecionado ? Number(enderecoSelecionado.lon) : null,
+    fotoPerfil: fotoPerfilBase64,
+    galeriaFotos: galeriaBase64.length ? galeriaBase64 : [],
+    redesSociais: {
+      instagram: document.getElementById('social-instagram').value.trim() || null,
+      facebook:  document.getElementById('social-facebook').value.trim()  || null,
+      whatsapp:  document.getElementById('social-whatsapp').value.trim()  || null,
+      linkedin:  document.getElementById('social-linkedin').value.trim()  || null,
+      website:   document.getElementById('social-website').value.trim()   || null,
+    },
   };
 
   const camposObrigatorios = [
@@ -299,6 +402,11 @@ form.addEventListener('submit', async (e) => {
       );
       alert('Cadastro realizado com sucesso!');
       form.reset();
+      fotoPerfilBase64 = null;
+      galeriaBase64 = [];
+      fotoPerfPreview.innerHTML = '<i class="fa-solid fa-user"></i>';
+      btnRemoverFoto.style.display = 'none';
+      renderGaleriaPreview();
     } else {
       mostrarFeedback((data.error || 'Erro ao realizar o cadastro.'), 'erro');
     }

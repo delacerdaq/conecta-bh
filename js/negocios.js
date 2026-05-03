@@ -232,10 +232,27 @@ function renderNegocios(lista) {
     const label = LABELS[e.tipoNegocio] || e.tipoNegocio;
     const regiaoKey = identificarRegiao(e);
     const regiao = REGIOES[regiaoKey];
+    const rs = e.redesSociais || {};
+
+    const fotoPerfil = e.fotoPerfil
+      ? `<img src="${e.fotoPerfil}" alt="Foto de ${e.nome}" class="card-foto-perfil">`
+      : `<div class="card-icon"><i class="fa-solid ${icone}"></i></div>`;
+
+    const galeria = e.galeriaFotos && e.galeriaFotos.length
+      ? `<div class="card-galeria">${e.galeriaFotos.map((src, i) => `<img src="${src}" alt="Foto do negócio ${i + 1}">`).join('')}</div>`
+      : '';
+
+    const sociais = [
+      rs.instagram && `<a href="${rs.instagram}" target="_blank" rel="noopener" class="card-social-link instagram" title="Instagram"><i class="fa-brands fa-instagram"></i></a>`,
+      rs.facebook  && `<a href="${rs.facebook}"  target="_blank" rel="noopener" class="card-social-link facebook"  title="Facebook"><i class="fa-brands fa-facebook-f"></i></a>`,
+      rs.whatsapp  && `<a href="${rs.whatsapp}"  target="_blank" rel="noopener" class="card-social-link whatsapp"  title="WhatsApp"><i class="fa-brands fa-whatsapp"></i></a>`,
+      rs.linkedin  && `<a href="${rs.linkedin}"  target="_blank" rel="noopener" class="card-social-link linkedin"  title="LinkedIn"><i class="fa-brands fa-linkedin-in"></i></a>`,
+      rs.website   && `<a href="${rs.website}"   target="_blank" rel="noopener" class="card-social-link website"   title="Site"><i class="fa-solid fa-globe"></i></a>`,
+    ].filter(Boolean).join('');
 
     return `
       <div class="card">
-        <div class="card-icon"><i class="fa-solid ${icone}"></i></div>
+        ${fotoPerfil}
         <h3>${e.nomeNegocio}</h3>
         <p><strong>Empreendedor:</strong> ${e.nome}</p>
         <p><strong>Categoria:</strong> ${label}</p>
@@ -247,6 +264,8 @@ function renderNegocios(lista) {
         </p>
         ${e.email ? `<p style="margin-top:0.5rem;"><i class="fa-regular fa-envelope color-purple"></i>
           <a href="mailto:${e.email}" style="color: var(--gray); font-size: 0.9rem;"> ${e.email}</a></p>` : ''}
+        ${sociais ? `<div class="card-social-links">${sociais}</div>` : ''}
+        ${galeria}
       </div>`;
   }).join('');
 
