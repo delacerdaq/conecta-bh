@@ -102,7 +102,7 @@ function renderSugestoes(lista) {
         class="address-suggestion-item"
         data-index="${index}"
         role="option"
-      >${item.display_name}</button>`)
+      >${item.label || item.display_name}</button>`)
     .join('');
 
   suggestionsEl.style.display = 'block';
@@ -114,8 +114,22 @@ function enderecoPareceCompleto(endereco) {
   return texto.length >= 12 && possuiNumero;
 }
 
-function montarConsultaEndereco(texto) {
-  return `${texto}, Belo Horizonte, Minas Gerais, Brasil`;
+function extrairNumeroDoTexto(texto) {
+  const match = texto.match(/(?:,\s*|\s+)(\d+)\s*(?:[,\s]|$)/);
+  return match ? match[1] : null;
+}
+
+function extrairRuaDoTexto(texto) {
+  return texto.replace(/(?:,\s*|\s+)\d+.*$/, '').trim();
+}
+
+function injetarNumeroNoDisplayName(displayName, road, numero) {
+  if (!road || !numero) return displayName;
+  const idx = displayName.indexOf(road);
+  if (idx === -1) return displayName;
+  const after = displayName.slice(idx + road.length);
+  if (/^\s*,\s*\d+/.test(after)) return displayName;
+  return displayName.slice(0, idx + road.length) + ', ' + numero + after;
 }
 
 async function buscarSugestoesEndereco(texto) {
@@ -125,18 +139,22 @@ async function buscarSugestoesEndereco(texto) {
 
   requestController = new AbortController();
 
+  const numero = extrairNumeroDoTexto(texto);
+  const textoBusca = numero ? extrairRuaDoTexto(texto) : texto;
+  const q = textoBusca.toLowerCase().includes('belo horizonte')
+    ? textoBusca
+    : `${textoBusca}, Belo Horizonte, Minas Gerais, Brasil`;
+
   const url = new URL(NOMINATIM_URL);
-  url.searchParams.set('q', montarConsultaEndereco(texto));
+  url.searchParams.set('q', q);
   url.searchParams.set('format', 'jsonv2');
   url.searchParams.set('addressdetails', '1');
-  url.searchParams.set('limit', '5');
+  url.searchParams.set('limit', '7');
   url.searchParams.set('countrycodes', 'br');
 
   const res = await fetch(url.toString(), {
     signal: requestController.signal,
-    headers: {
-      Accept: 'application/json',
-    },
+    headers: { Accept: 'application/json' },
   });
 
   if (!res.ok) {
@@ -144,12 +162,26 @@ async function buscarSugestoesEndereco(texto) {
   }
 
   const data = await res.json();
-  return data.filter((item) => (item.display_name || '').toLowerCase().includes('belo horizonte'));
+  const filtrados = data.filter((item) => {
+    const nome = (item.display_name || '').toLowerCase();
+    const addr = item.address || {};
+    const cidade = (addr.city || addr.town || addr.village || '').toLowerCase();
+    return nome.includes('belo horizonte') || cidade.includes('belo horizonte');
+  });
+
+  return filtrados.map((item) => {
+    const addr = item.address || {};
+    const road = addr.road || addr.pedestrian || addr.footway || addr.path || addr.street || '';
+    const label = numero
+      ? injetarNumeroNoDisplayName(item.display_name, road, numero)
+      : item.display_name;
+    return { ...item, label, _numeroDigitado: numero || null };
+  });
 }
 
 function selecionarEndereco(item) {
   enderecoSelecionado = item;
-  addressInput.value = item.display_name;
+  addressInput.value = item.label || item.display_name;
   setMensagemEndereco('Endereço validado com sucesso.', 'sucesso');
   esconderSugestoes();
 }
@@ -167,7 +199,8 @@ async function validarEnderecoDigitado() {
     return false;
   }
 
-  if (enderecoSelecionado && enderecoSelecionado.display_name === endereco) {
+  const labelSelecionado = enderecoSelecionado?.label || enderecoSelecionado?.display_name;
+  if (enderecoSelecionado && labelSelecionado === endereco) {
     setMensagemEndereco('Endereço validado com sucesso.', 'sucesso');
     return true;
   }
