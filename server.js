@@ -198,6 +198,111 @@ app.post('/api/empreendedores', verificarAutenticacao, (req, res) => {
   }
 });
 
+/**
+ * PUT /api/empreendedores/:id
+ * Atualiza um empreendedor do próprio usuário autenticado
+ */
+app.put('/api/empreendedores/:id', verificarAutenticacao, (req, res) => {
+  try {
+    const empreendedorId = Number(req.params.id);
+    if (!Number.isFinite(empreendedorId)) {
+      return res.status(400).json({ error: 'ID do negócio inválido.' });
+    }
+
+    const raw = fs.readFileSync(DB_PATH, 'utf-8');
+    const data = JSON.parse(raw);
+    const index = (data.empreendedores || []).findIndex((emp) => emp.id === empreendedorId);
+
+    if (index === -1) {
+      return res.status(404).json({ error: 'Negócio não encontrado.' });
+    }
+
+    const atual = data.empreendedores[index];
+    if (atual.usuarioId !== req.usuarioId) {
+      return res.status(403).json({ error: 'Você não tem permissão para editar este negócio.' });
+    }
+
+    const camposPermitidos = {
+      nome: req.body.nome,
+      email: req.body.email,
+      telefone: req.body.telefone,
+      cpf: req.body.cpf,
+      nomeNegocio: req.body.nomeNegocio,
+      tipoNegocio: req.body.tipoNegocio,
+      descricao: req.body.descricao,
+      endereco: req.body.endereco,
+      latitude: req.body.latitude,
+      longitude: req.body.longitude,
+      fotoPerfil: req.body.fotoPerfil,
+      galeriaFotos: req.body.galeriaFotos,
+      redesSociais: req.body.redesSociais,
+    };
+
+    const atualizado = {
+      ...atual,
+      ...Object.fromEntries(
+        Object.entries(camposPermitidos).filter(([, value]) => value !== undefined)
+      ),
+      tipoNegocio: req.body.tipoNegocio || atual.tipoNegocio || 'outro',
+      latitude: req.body.latitude === undefined
+        ? atual.latitude
+        : (Number.isFinite(Number(req.body.latitude)) ? Number(req.body.latitude) : null),
+      longitude: req.body.longitude === undefined
+        ? atual.longitude
+        : (Number.isFinite(Number(req.body.longitude)) ? Number(req.body.longitude) : null),
+      galeriaFotos: req.body.galeriaFotos === undefined
+        ? (Array.isArray(atual.galeriaFotos) ? atual.galeriaFotos : [])
+        : (Array.isArray(req.body.galeriaFotos) ? req.body.galeriaFotos : []),
+      redesSociais: req.body.redesSociais === undefined
+        ? (atual.redesSociais && typeof atual.redesSociais === 'object' ? atual.redesSociais : {})
+        : (req.body.redesSociais && typeof req.body.redesSociais === 'object' ? req.body.redesSociais : {}),
+      atualizadoEm: new Date().toISOString(),
+    };
+
+    data.empreendedores[index] = atualizado;
+    fs.writeFileSync(DB_PATH, JSON.stringify(data, null, 2), { encoding: 'utf-8', flag: 'w' });
+
+    return res.json({ success: true, empreendedor: atualizado });
+  } catch (err) {
+    console.error('Erro ao atualizar negócio:', err);
+    return res.status(500).json({ error: 'Erro ao atualizar o negócio.' });
+  }
+});
+
+/**
+ * DELETE /api/empreendedores/:id
+ * Exclui um empreendedor do próprio usuário autenticado
+ */
+app.delete('/api/empreendedores/:id', verificarAutenticacao, (req, res) => {
+  try {
+    const empreendedorId = Number(req.params.id);
+    if (!Number.isFinite(empreendedorId)) {
+      return res.status(400).json({ error: 'ID do negócio inválido.' });
+    }
+
+    const raw = fs.readFileSync(DB_PATH, 'utf-8');
+    const data = JSON.parse(raw);
+    const index = (data.empreendedores || []).findIndex((emp) => emp.id === empreendedorId);
+
+    if (index === -1) {
+      return res.status(404).json({ error: 'Negócio não encontrado.' });
+    }
+
+    const atual = data.empreendedores[index];
+    if (atual.usuarioId !== req.usuarioId) {
+      return res.status(403).json({ error: 'Você não tem permissão para excluir este negócio.' });
+    }
+
+    data.empreendedores.splice(index, 1);
+    fs.writeFileSync(DB_PATH, JSON.stringify(data, null, 2), { encoding: 'utf-8', flag: 'w' });
+
+    return res.json({ success: true });
+  } catch (err) {
+    console.error('Erro ao excluir negócio:', err);
+    return res.status(500).json({ error: 'Erro ao excluir o negócio.' });
+  }
+});
+
 app.listen(PORT, () => {
   console.log(`ConectaBH rodando em http://localhost:${PORT}`);
   console.log(`   Banco de dados: ${DB_PATH}`);
