@@ -56,4 +56,40 @@ function atualizarMenuUsuario() {
   }
 }
 
-document.addEventListener('DOMContentLoaded', atualizarMenuUsuario);
+function iniciarNavToggle() {
+  const navToggle = document.getElementById('nav-toggle');
+  const nav = document.querySelector('header nav');
+  if (!navToggle || !nav) return;
+
+  navToggle.addEventListener('click', () => {
+    const aberto = nav.classList.toggle('active');
+    const icon = navToggle.querySelector('i');
+    if (icon) {
+      icon.className = aberto ? 'fa-solid fa-xmark' : 'fa-solid fa-bars';
+    }
+    navToggle.setAttribute('aria-expanded', aberto ? 'true' : 'false');
+  });
+
+  nav.querySelectorAll('a').forEach(link => {
+    link.addEventListener('click', () => {
+      nav.classList.remove('active');
+      const icon = navToggle.querySelector('i');
+      if (icon) icon.className = 'fa-solid fa-bars';
+      navToggle.setAttribute('aria-expanded', 'false');
+    });
+  });
+
+  window.addEventListener('resize', () => {
+    if (window.innerWidth > 768) {
+      nav.classList.remove('active');
+      const icon = navToggle.querySelector('i');
+      if (icon) icon.className = 'fa-solid fa-bars';
+      navToggle.setAttribute('aria-expanded', 'false');
+    }
+  });
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  atualizarMenuUsuario();
+  iniciarNavToggle();
+});
