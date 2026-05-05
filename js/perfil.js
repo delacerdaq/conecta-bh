@@ -20,6 +20,7 @@ const enderecoSelecionadoPorNegocio = new Map();
 const debounceBuscaPorNegocio = new Map();
 const requestControllerPorNegocio = new Map();
 const galeriaFotosPorNegocio = new Map();
+const fotoPerfilPorNegocio = new Map();
 
 const MAX_IMAGEM_BYTES = 2 * 1024 * 1024;
 const MAX_GALERIA_FOTOS = 5;
@@ -47,9 +48,32 @@ function lerArquivoBase64(arquivo) {
 
     const reader = new FileReader();
     reader.onload = (e) => resolve(e.target.result);
-    reader.onerror = () => reject(new Error('Erro ao ler arquivo da galeria.'));
+    reader.onerror = () => reject(new Error('Erro ao ler arquivo da imagem.'));
     reader.readAsDataURL(arquivo);
   });
+}
+
+function getFotoPerfilNegocio(negocioId) {
+  return fotoPerfilPorNegocio.get(String(negocioId)) ?? null;
+}
+
+function setFotoPerfilNegocio(negocioId, foto) {
+  fotoPerfilPorNegocio.set(String(negocioId), foto || null);
+}
+
+function renderFotoPerfilEdicao(formEl, negocioId) {
+  const preview = formEl.querySelector('.edit-foto-perfil-preview');
+  const btnRemover = formEl.querySelector('.edit-foto-perfil-remove');
+  if (!preview || !btnRemover) return;
+
+  const foto = getFotoPerfilNegocio(negocioId);
+  if (foto) {
+    preview.innerHTML = `<img src="${foto}" alt="Foto de perfil do empreendedor">`;
+    btnRemover.style.display = 'inline-flex';
+  } else {
+    preview.innerHTML = '<i class="fa-solid fa-user"></i>';
+    btnRemover.style.display = 'none';
+  }
 }
 
 function getGaleriaNegocio(negocioId) {
@@ -367,6 +391,7 @@ async function carregarMeusNegocios(usuarioId, token) {
     };
 
     listaNegociios.innerHTML = meusNegocios.map(negocio => {
+      setFotoPerfilNegocio(negocio.id, negocio.fotoPerfil || null);
       setGaleriaNegocio(negocio.id, Array.isArray(negocio.galeriaFotos) ? negocio.galeriaFotos : []);
 
       const icone = ICONES[negocio.tipoNegocio] || 'fa-building';
@@ -466,6 +491,32 @@ async function carregarMeusNegocios(usuarioId, token) {
             </div>
 
             <div class="form-group">
+              <label>Foto de perfil do empreendedor</label>
+              <div class="foto-perfil-upload">
+                <div class="foto-perfil-preview edit-foto-perfil-preview">
+                  <i class="fa-solid fa-user"></i>
+                </div>
+                <div class="foto-perfil-actions">
+                  <label for="edit-foto-perfil-${negocio.id}" class="btn btn-outline" style="cursor:pointer;">
+                    <i class="fa-solid fa-camera"></i> Escolher foto
+                  </label>
+                  <input
+                    type="file"
+                    id="edit-foto-perfil-${negocio.id}"
+                    class="edit-foto-perfil-input"
+                    data-negocio-id="${negocio.id}"
+                    accept="image/*"
+                    style="display:none;"
+                  >
+                  <button type="button" class="btn btn-outline btn-danger-outline edit-foto-perfil-remove" data-negocio-id="${negocio.id}" style="display:none;">
+                    <i class="fa-solid fa-trash"></i> Remover
+                  </button>
+                  <small class="address-help">Máximo 2 MB · JPG, PNG ou WEBP</small>
+                </div>
+              </div>
+            </div>
+
+            <div class="form-group">
               <label>Galeria de fotos do negócio</label>
               <div class="galeria-upload">
                 <label for="edit-galeria-fotos-${negocio.id}" class="galeria-dropzone">
@@ -497,6 +548,7 @@ async function carregarMeusNegocios(usuarioId, token) {
 
     listaNegociios.querySelectorAll('.negocio-edit-form').forEach((formEl) => {
       const negocioId = formEl.dataset.editFormId;
+      renderFotoPerfilEdicao(formEl, negocioId);
       renderGaleriaEdicao(formEl, negocioId);
     });
 
@@ -577,6 +629,7 @@ async function salvarEdicaoNegocio(negocioId, formEl) {
       linkedin: String(formData.get('socialLinkedin') || '').trim() || null,
       website: String(formData.get('socialWebsite') || '').trim() || null,
     },
+    fotoPerfil: getFotoPerfilNegocio(negocioId),
     galeriaFotos: getGaleriaNegocio(negocioId),
   };
 
@@ -690,6 +743,21 @@ function iniciarAcoesNegocios() {
         const helper = formEl.querySelector('.edit-galeria-helper');
         if (helper) helper.textContent = `${fotos.length} de ${MAX_GALERIA_FOTOS} fotos adicionadas.`;
       }
+      return;
+    }
+
+    const btnRemoverFotoPerfil = event.target.closest('.edit-foto-perfil-remove');
+    if (btnRemoverFotoPerfil) {
+      const negocioId = String(btnRemoverFotoPerfil.dataset.negocioId || '');
+      if (!negocioId) return;
+
+      setFotoPerfilNegocio(negocioId, null);
+      const formEl = btnRemoverFotoPerfil.closest('.negocio-edit-form');
+      if (formEl) {
+        const inputFoto = formEl.querySelector('.edit-foto-perfil-input');
+        if (inputFoto) inputFoto.value = '';
+        renderFotoPerfilEdicao(formEl, negocioId);
+      }
     }
   });
 
@@ -743,6 +811,26 @@ function iniciarAcoesNegocios() {
   });
 
   container.addEventListener('change', async (event) => {
+    const inputFotoPerfil = event.target.closest('.edit-foto-perfil-input');
+    if (inputFotoPerfil) {
+      const negocioId = String(inputFotoPerfil.dataset.negocioId || '');
+      const formEl = inputFotoPerfil.closest('.negocio-edit-form');
+      if (!negocioId || !formEl) return;
+
+      const arquivo = inputFotoPerfil.files?.[0];
+      if (!arquivo) return;
+
+      try {
+        const b64 = await lerArquivoBase64(arquivo);
+        setFotoPerfilNegocio(negocioId, b64);
+        renderFotoPerfilEdicao(formEl, negocioId);
+      } catch (err) {
+        alert(err.message || 'Não foi possível carregar a foto de perfil.');
+        inputFotoPerfil.value = '';
+      }
+      return;
+    }
+
     const inputGaleria = event.target.closest('.edit-galeria-input');
     if (!inputGaleria) return;
 

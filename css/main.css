@@ -703,8 +703,15 @@ section h2::after {
 }
 
 .btn-danger-outline {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
   border-color: rgba(253, 95, 132, 0.4) !important;
   color: #c0002f !important;
+}
+
+.btn-danger-outline i {
+  font-size: 0.82em;
 }
 
 .btn-danger-outline:hover {
@@ -1142,6 +1149,12 @@ section h2::after {
 
 .btn-perfil.danger:hover {
   background: rgba(253, 95, 132, 0.15);
+}
+
+.edit-foto-perfil-remove {
+  font-family: 'League Spartan', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  align-items: center;
+  justify-content: center;
 }
 
 .meus-negocios {
