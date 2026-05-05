@@ -61,6 +61,8 @@ function iniciarNavToggle() {
   const nav = document.querySelector('header nav');
   if (!navToggle || !nav) return;
 
+  navToggle.setAttribute('aria-expanded', 'false');
+
   navToggle.addEventListener('click', () => {
     const aberto = nav.classList.toggle('active');
     const icon = navToggle.querySelector('i');
@@ -89,7 +91,40 @@ function iniciarNavToggle() {
   });
 }
 
+function iniciarEfeitosVisuais() {
+  const elementos = document.querySelectorAll(
+    'main section, .card, .table-card, .perfil-card, .negocio-item, .footer-section, .galeria-thumb, .social-input-label'
+  );
+
+  if (!elementos.length) return;
+
+  elementos.forEach((elemento, index) => {
+    elemento.classList.add('reveal-on-scroll');
+    elemento.style.setProperty('--reveal-delay', `${Math.min(index % 4, 3) * 0.08}s`);
+  });
+
+  if (!('IntersectionObserver' in window)) {
+    elementos.forEach((elemento) => elemento.classList.add('is-visible'));
+    return;
+  }
+
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach((entry) => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('is-visible');
+        observer.unobserve(entry.target);
+      }
+    });
+  }, {
+    threshold: 0.12,
+    rootMargin: '0px 0px -8% 0px'
+  });
+
+  elementos.forEach((elemento) => observer.observe(elemento));
+}
+
 document.addEventListener('DOMContentLoaded', () => {
   atualizarMenuUsuario();
   iniciarNavToggle();
+  iniciarEfeitosVisuais();
 });
