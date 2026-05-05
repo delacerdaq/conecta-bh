@@ -29,6 +29,11 @@ function escapeHtml(texto) {
     .replace(/'/g, '&#039;');
 }
 
+function valorRedeSocial(negocio, chave) {
+  if (!negocio || !negocio.redesSociais || typeof negocio.redesSociais !== 'object') return '';
+  return String(negocio.redesSociais[chave] || '');
+}
+
 function obterTokenEUsuario() {
   const token = localStorage.getItem('conectabh_token');
   const usuarioData = localStorage.getItem('conectabh_usuario');
@@ -384,6 +389,33 @@ async function carregarMeusNegocios(usuarioId, token) {
               <label>Telefone de contato</label>
               <input type="text" name="telefone" value="${escapeHtml(negocio.telefone || '')}">
             </div>
+
+            <div class="form-group">
+              <label>Redes sociais</label>
+              <div class="social-links-group">
+                <label class="social-input-label">
+                  <i class="fa-brands fa-instagram social-icon instagram"></i>
+                  <input type="url" name="socialInstagram" placeholder="https://instagram.com/seunegocio" value="${escapeHtml(valorRedeSocial(negocio, 'instagram'))}">
+                </label>
+                <label class="social-input-label">
+                  <i class="fa-brands fa-facebook-f social-icon facebook"></i>
+                  <input type="url" name="socialFacebook" placeholder="https://facebook.com/seunegocio" value="${escapeHtml(valorRedeSocial(negocio, 'facebook'))}">
+                </label>
+                <label class="social-input-label">
+                  <i class="fa-brands fa-whatsapp social-icon whatsapp"></i>
+                  <input type="url" name="socialWhatsapp" placeholder="https://wa.me/5531999999999" value="${escapeHtml(valorRedeSocial(negocio, 'whatsapp'))}">
+                </label>
+                <label class="social-input-label">
+                  <i class="fa-brands fa-linkedin-in social-icon linkedin"></i>
+                  <input type="url" name="socialLinkedin" placeholder="https://linkedin.com/company/seunegocio" value="${escapeHtml(valorRedeSocial(negocio, 'linkedin'))}">
+                </label>
+                <label class="social-input-label">
+                  <i class="fa-solid fa-globe social-icon website"></i>
+                  <input type="url" name="socialWebsite" placeholder="https://www.seunegocio.com.br" value="${escapeHtml(valorRedeSocial(negocio, 'website'))}">
+                </label>
+              </div>
+            </div>
+
             <div class="negocio-actions">
               <button type="submit" class="btn btn-primary">Salvar alterações</button>
               <button type="button" class="btn btn-outline btn-cancelar-edicao" data-negocio-id="${negocio.id}">Cancelar</button>
@@ -462,6 +494,13 @@ async function salvarEdicaoNegocio(negocioId, formEl) {
     endereco: String(formData.get('endereco') || '').trim(),
     email: String(formData.get('email') || '').trim(),
     telefone: String(formData.get('telefone') || '').trim(),
+    redesSociais: {
+      instagram: String(formData.get('socialInstagram') || '').trim() || null,
+      facebook: String(formData.get('socialFacebook') || '').trim() || null,
+      whatsapp: String(formData.get('socialWhatsapp') || '').trim() || null,
+      linkedin: String(formData.get('socialLinkedin') || '').trim() || null,
+      website: String(formData.get('socialWebsite') || '').trim() || null,
+    },
   };
 
   const enderecoAtualOriginal = String(formEl.querySelector('.edit-address-input')?.defaultValue || '').trim();
