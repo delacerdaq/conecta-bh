@@ -446,6 +446,7 @@ section h2::after {
   text-align: center;
   font-size: 0.95rem;
   box-shadow: 0 10px 24px rgba(26, 26, 26, 0.08);
+  font-family: 'League Spartan', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
 .btn-primary {
@@ -899,6 +900,73 @@ section h2::after {
   border: 1px solid rgba(202, 104, 255, 0.1);
 }
 
+.card-produtos {
+  margin-top: 0.9rem;
+  border-top: 1px dashed rgba(202, 104, 255, 0.22);
+  padding-top: 0.8rem;
+}
+
+.card-produtos h4 {
+  color: var(--purple);
+  font-size: 1rem;
+  margin-bottom: 0.55rem;
+}
+
+.card-produtos-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.55rem;
+}
+
+.produto-card-item {
+  display: grid;
+  grid-template-columns: 52px minmax(0, 1fr);
+  gap: 0.6rem;
+  align-items: center;
+  background: rgba(202, 104, 255, 0.05);
+  border: 1px solid rgba(202, 104, 255, 0.12);
+  border-radius: 10px;
+  padding: 0.45rem;
+}
+
+.produto-card-foto {
+  width: 52px;
+  height: 52px;
+  border-radius: 8px;
+  background: rgba(202, 104, 255, 0.12);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--purple);
+  overflow: hidden;
+}
+
+.produto-card-foto img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.produto-card-info h5 {
+  margin: 0;
+  color: var(--dark);
+  font-size: 0.95rem;
+}
+
+.produto-card-info p {
+  margin: 0.2rem 0 0;
+  font-size: 0.82rem;
+  color: var(--gray);
+}
+
+.produto-card-preco {
+  color: var(--purple-dark);
+  font-weight: 500;
+  font-size: 0.86rem;
+  margin-top: 0.18rem;
+  display: inline-block;
+}
+
 .map-section-header {
   display: flex;
   justify-content: space-between;
@@ -1119,6 +1187,7 @@ section h2::after {
   font-weight: 400;
   transition: all 0.3s ease;
   font-size: 0.95rem;
+  font-family: 'League Spartan', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
 .btn-perfil.primary {
@@ -1152,7 +1221,6 @@ section h2::after {
 }
 
 .edit-foto-perfil-remove {
-  font-family: 'League Spartan', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   align-items: center;
   justify-content: center;
 }
@@ -1207,6 +1275,75 @@ section h2::after {
 
 .negocio-edit-form .btn {
   width: auto;
+}
+
+.produto-edit-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.8rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.4rem;
+}
+
+.produto-edit-item {
+  border: 1px solid rgba(202, 104, 255, 0.16);
+  background: rgba(202, 104, 255, 0.04);
+  border-radius: 12px;
+  padding: 0.8rem;
+  margin-top: 0.65rem;
+}
+
+.produto-edit-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.8rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.7rem;
+}
+
+.produto-edit-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.7rem;
+}
+
+.produto-edit-descricao {
+  grid-column: 1 / -1;
+}
+
+.produto-foto-upload {
+  margin-top: 0.25rem;
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  flex-wrap: wrap;
+}
+
+.produto-foto-preview {
+  width: 70px;
+  height: 70px;
+  border-radius: 10px;
+  border: 1px dashed rgba(202, 104, 255, 0.34);
+  background: rgba(202, 104, 255, 0.08);
+  color: var(--purple);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.produto-foto-preview img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.produto-foto-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
 }
 
 .negocio-item h3 {
@@ -1606,6 +1743,14 @@ footer {
 
   .negocio-actions {
     flex-direction: column;
+  }
+
+  .produto-edit-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .produto-card-item {
+    grid-template-columns: 46px minmax(0, 1fr);
   }
 
   .negocio-actions .btn,
