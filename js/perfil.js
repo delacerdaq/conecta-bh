@@ -21,9 +21,11 @@ const debounceBuscaPorNegocio = new Map();
 const requestControllerPorNegocio = new Map();
 const galeriaFotosPorNegocio = new Map();
 const fotoPerfilPorNegocio = new Map();
+const produtosPorNegocio = new Map();
 
 const MAX_IMAGEM_BYTES = 2 * 1024 * 1024;
 const MAX_GALERIA_FOTOS = 5;
+const MAX_PRODUTOS = 6;
 
 function escapeHtml(texto) {
   return String(texto ?? '')
@@ -74,6 +76,90 @@ function renderFotoPerfilEdicao(formEl, negocioId) {
     preview.innerHTML = '<i class="fa-solid fa-user"></i>';
     btnRemover.style.display = 'none';
   }
+}
+
+function getProdutosNegocio(negocioId) {
+  return produtosPorNegocio.get(String(negocioId)) || [];
+}
+
+function setProdutosNegocio(negocioId, produtos) {
+  produtosPorNegocio.set(String(negocioId), Array.isArray(produtos) ? produtos.slice(0, MAX_PRODUTOS) : []);
+}
+
+function normalizarProdutosNegocio(lista) {
+  if (!Array.isArray(lista)) return [];
+  return lista.slice(0, MAX_PRODUTOS).map((produto) => ({
+    id: Number.isFinite(Number(produto?.id)) ? Number(produto.id) : Date.now() + Math.floor(Math.random() * 10000),
+    nome: String(produto?.nome || '').trim(),
+    descricao: String(produto?.descricao || '').trim(),
+    preco: String(produto?.preco || '').trim(),
+    foto: produto?.foto || null,
+  }));
+}
+
+function formatarPrecoProduto(preco) {
+  if (!preco) return '';
+  const valor = Number(String(preco).replace(',', '.'));
+  if (!Number.isFinite(valor)) return String(preco);
+  return valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+}
+
+function renderProdutosEdicao(formEl, negocioId) {
+  const listaEl = formEl.querySelector('.edit-produtos-list');
+  const helperEl = formEl.querySelector('.edit-produtos-helper');
+  if (!listaEl || !helperEl) return;
+
+  const produtos = getProdutosNegocio(negocioId);
+  helperEl.textContent = `${produtos.length} de ${MAX_PRODUTOS} produtos cadastrados.`;
+
+  if (!produtos.length) {
+    listaEl.innerHTML = '<p class="address-help" style="margin-top: 0.4rem;">Nenhum produto cadastrado ainda.</p>';
+    return;
+  }
+
+  listaEl.innerHTML = produtos.map((produto, index) => `
+    <div class="produto-edit-item">
+      <div class="produto-edit-top">
+        <strong>Produto ${index + 1}</strong>
+        <button type="button" class="btn btn-outline btn-remover-produto" data-negocio-id="${negocioId}" data-produto-idx="${index}">
+          <i class="fa-solid fa-trash"></i> Remover produto
+        </button>
+      </div>
+
+      <div class="produto-edit-grid">
+        <div class="form-group">
+          <label>Nome do produto</label>
+          <input type="text" class="edit-produto-field" data-negocio-id="${negocioId}" data-produto-idx="${index}" data-campo="nome" value="${escapeHtml(produto.nome || '')}" placeholder="Ex: Combo Sushi Executivo" required>
+        </div>
+
+        <div class="form-group">
+          <label>Preço</label>
+          <input type="text" class="edit-produto-field" data-negocio-id="${negocioId}" data-produto-idx="${index}" data-campo="preco" value="${escapeHtml(produto.preco || '')}" placeholder="Ex: 39,90">
+        </div>
+
+        <div class="form-group produto-edit-descricao">
+          <label>Descrição</label>
+          <textarea class="edit-produto-field" data-negocio-id="${negocioId}" data-produto-idx="${index}" data-campo="descricao" placeholder="Descreva o produto...">${escapeHtml(produto.descricao || '')}</textarea>
+        </div>
+      </div>
+
+      <div class="produto-foto-upload">
+        <div class="produto-foto-preview">
+          ${produto.foto ? `<img src="${produto.foto}" alt="Foto de ${escapeHtml(produto.nome || `Produto ${index + 1}`)}">` : '<i class="fa-solid fa-box-open"></i>'}
+        </div>
+        <div class="produto-foto-actions">
+          <label for="edit-produto-foto-${negocioId}-${index}" class="btn btn-outline" style="cursor:pointer;">
+            <i class="fa-solid fa-camera"></i> Escolher foto do produto
+          </label>
+          <input type="file" id="edit-produto-foto-${negocioId}-${index}" class="edit-produto-foto-input" data-negocio-id="${negocioId}" data-produto-idx="${index}" accept="image/*" style="display:none;">
+          <button type="button" class="btn btn-outline btn-danger-outline btn-remover-foto-produto" data-negocio-id="${negocioId}" data-produto-idx="${index}" ${produto.foto ? '' : 'style="display:none;"'}>
+            <i class="fa-solid fa-trash"></i> Remover foto
+          </button>
+          ${formatarPrecoProduto(produto.preco) ? `<small class="address-help">Preço atual: ${formatarPrecoProduto(produto.preco)}</small>` : '<small class="address-help">Máximo 2 MB · JPG, PNG ou WEBP</small>'}
+        </div>
+      </div>
+    </div>
+  `).join('');
 }
 
 function getGaleriaNegocio(negocioId) {
@@ -393,6 +479,7 @@ async function carregarMeusNegocios(usuarioId, token) {
     listaNegociios.innerHTML = meusNegocios.map(negocio => {
       setFotoPerfilNegocio(negocio.id, negocio.fotoPerfil || null);
       setGaleriaNegocio(negocio.id, Array.isArray(negocio.galeriaFotos) ? negocio.galeriaFotos : []);
+      setProdutosNegocio(negocio.id, normalizarProdutosNegocio(negocio.produtos || []));
 
       const icone = ICONES[negocio.tipoNegocio] || 'fa-building';
       const label = LABELS[negocio.tipoNegocio] || negocio.tipoNegocio;
@@ -538,6 +625,17 @@ async function carregarMeusNegocios(usuarioId, token) {
               </div>
             </div>
 
+            <div class="form-group">
+              <div class="produto-edit-header">
+                <label style="margin-bottom:0;">Produtos do negócio</label>
+                <button type="button" class="btn btn-secondary btn-add-produto" data-negocio-id="${negocio.id}">
+                  <i class="fa-solid fa-plus"></i> Adicionar produto
+                </button>
+              </div>
+              <small class="address-help edit-produtos-helper"></small>
+              <div class="edit-produtos-list"></div>
+            </div>
+
             <div class="negocio-actions">
               <button type="submit" class="btn btn-primary">Salvar alterações</button>
               <button type="button" class="btn btn-outline btn-cancelar-edicao" data-negocio-id="${negocio.id}">Cancelar</button>
@@ -550,6 +648,7 @@ async function carregarMeusNegocios(usuarioId, token) {
       const negocioId = formEl.dataset.editFormId;
       renderFotoPerfilEdicao(formEl, negocioId);
       renderGaleriaEdicao(formEl, negocioId);
+      renderProdutosEdicao(formEl, negocioId);
     });
 
   } catch (err) {
@@ -631,7 +730,19 @@ async function salvarEdicaoNegocio(negocioId, formEl) {
     },
     fotoPerfil: getFotoPerfilNegocio(negocioId),
     galeriaFotos: getGaleriaNegocio(negocioId),
+    produtos: normalizarProdutosNegocio(getProdutosNegocio(negocioId)),
   };
+
+  if (payload.produtos.length > MAX_PRODUTOS) {
+    alert(`Cada negócio pode ter no máximo ${MAX_PRODUTOS} produtos.`);
+    return;
+  }
+
+  const produtoInvalido = payload.produtos.find((p) => p.nome && !p.foto);
+  if (produtoInvalido) {
+    alert('Todo produto com nome deve ter foto.');
+    return;
+  }
 
   const enderecoAtualOriginal = String(formEl.querySelector('.edit-address-input')?.defaultValue || '').trim();
   const enderecoValido = await validarEnderecoEdicao(formEl, negocioId, enderecoAtualOriginal);
@@ -758,10 +869,78 @@ function iniciarAcoesNegocios() {
         if (inputFoto) inputFoto.value = '';
         renderFotoPerfilEdicao(formEl, negocioId);
       }
+      return;
+    }
+
+    const btnAddProduto = event.target.closest('.btn-add-produto');
+    if (btnAddProduto) {
+      const negocioId = String(btnAddProduto.dataset.negocioId || '');
+      const formEl = btnAddProduto.closest('.negocio-edit-form');
+      if (!negocioId || !formEl) return;
+
+      const produtos = getProdutosNegocio(negocioId);
+      if (produtos.length >= MAX_PRODUTOS) {
+        alert(`Cada negócio pode cadastrar até ${MAX_PRODUTOS} produtos.`);
+        return;
+      }
+
+      produtos.push({
+        id: Date.now() + Math.floor(Math.random() * 1000),
+        nome: '',
+        descricao: '',
+        preco: '',
+        foto: null,
+      });
+      setProdutosNegocio(negocioId, produtos);
+      renderProdutosEdicao(formEl, negocioId);
+      return;
+    }
+
+    const btnRemoverProduto = event.target.closest('.btn-remover-produto');
+    if (btnRemoverProduto) {
+      const negocioId = String(btnRemoverProduto.dataset.negocioId || '');
+      const idx = Number(btnRemoverProduto.dataset.produtoIdx);
+      const formEl = btnRemoverProduto.closest('.negocio-edit-form');
+      if (!negocioId || !formEl) return;
+
+      const produtos = getProdutosNegocio(negocioId);
+      if (!Number.isFinite(idx) || idx < 0 || idx >= produtos.length) return;
+      produtos.splice(idx, 1);
+      setProdutosNegocio(negocioId, produtos);
+      renderProdutosEdicao(formEl, negocioId);
+      return;
+    }
+
+    const btnRemoverFotoProduto = event.target.closest('.btn-remover-foto-produto');
+    if (btnRemoverFotoProduto) {
+      const negocioId = String(btnRemoverFotoProduto.dataset.negocioId || '');
+      const idx = Number(btnRemoverFotoProduto.dataset.produtoIdx);
+      const formEl = btnRemoverFotoProduto.closest('.negocio-edit-form');
+      if (!negocioId || !formEl) return;
+
+      const produtos = getProdutosNegocio(negocioId);
+      if (!Number.isFinite(idx) || idx < 0 || idx >= produtos.length) return;
+      produtos[idx].foto = null;
+      setProdutosNegocio(negocioId, produtos);
+      renderProdutosEdicao(formEl, negocioId);
     }
   });
 
   container.addEventListener('input', (event) => {
+    const produtoField = event.target.closest('.edit-produto-field');
+    if (produtoField) {
+      const negocioId = String(produtoField.dataset.negocioId || '');
+      const idx = Number(produtoField.dataset.produtoIdx);
+      const campo = String(produtoField.dataset.campo || '');
+      if (!negocioId || !Number.isFinite(idx) || !campo) return;
+
+      const produtos = getProdutosNegocio(negocioId);
+      if (!produtos[idx]) return;
+      produtos[idx][campo] = produtoField.value;
+      setProdutosNegocio(negocioId, produtos);
+      return;
+    }
+
     const inputEndereco = event.target.closest('.edit-address-input');
     if (!inputEndereco) return;
 
@@ -811,6 +990,30 @@ function iniciarAcoesNegocios() {
   });
 
   container.addEventListener('change', async (event) => {
+    const inputFotoProduto = event.target.closest('.edit-produto-foto-input');
+    if (inputFotoProduto) {
+      const negocioId = String(inputFotoProduto.dataset.negocioId || '');
+      const idx = Number(inputFotoProduto.dataset.produtoIdx);
+      const formEl = inputFotoProduto.closest('.negocio-edit-form');
+      if (!negocioId || !formEl || !Number.isFinite(idx)) return;
+
+      const arquivo = inputFotoProduto.files?.[0];
+      if (!arquivo) return;
+
+      try {
+        const b64 = await lerArquivoBase64(arquivo);
+        const produtos = getProdutosNegocio(negocioId);
+        if (!produtos[idx]) return;
+        produtos[idx].foto = b64;
+        setProdutosNegocio(negocioId, produtos);
+        renderProdutosEdicao(formEl, negocioId);
+      } catch (err) {
+        alert(err.message || 'Não foi possível carregar a foto do produto.');
+        inputFotoProduto.value = '';
+      }
+      return;
+    }
+
     const inputFotoPerfil = event.target.closest('.edit-foto-perfil-input');
     if (inputFotoPerfil) {
       const negocioId = String(inputFotoPerfil.dataset.negocioId || '');

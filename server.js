@@ -14,6 +14,24 @@ app.use(express.json({ limit: '20mb' }));
 app.use(express.urlencoded({ extended: true, limit: '20mb' }));
 app.use(express.static(__dirname));
 
+function normalizarProdutos(lista) {
+  if (!Array.isArray(lista)) return [];
+
+  return lista
+    .slice(0, 6)
+    .map((produto) => ({
+      id: Number.isFinite(Number(produto?.id)) ? Number(produto.id) : Date.now() + Math.floor(Math.random() * 100000),
+      nome: typeof produto?.nome === 'string' ? produto.nome.trim() : '',
+      descricao: typeof produto?.descricao === 'string' ? produto.descricao.trim() : '',
+      preco: typeof produto?.preco === 'string'
+        ? produto.preco.trim()
+        : (produto?.preco == null ? '' : String(produto.preco)),
+      foto: typeof produto?.foto === 'string' ? produto.foto : null,
+      dataCadastro: produto?.dataCadastro || new Date().toISOString(),
+    }))
+    .filter((produto) => produto.nome || produto.descricao || produto.foto || produto.preco);
+}
+
 function verificarAutenticacao(req, res, next) {
   const token = req.headers.authorization?.split(' ')[1];
   if (!token) {
@@ -183,6 +201,7 @@ app.post('/api/empreendedores', verificarAutenticacao, (req, res) => {
       longitude: Number.isFinite(Number(req.body.longitude)) ? Number(req.body.longitude) : null,
       fotoPerfil: req.body.fotoPerfil || null,
       galeriaFotos: Array.isArray(req.body.galeriaFotos) ? req.body.galeriaFotos : [],
+      produtos: normalizarProdutos(req.body.produtos),
       redesSociais: req.body.redesSociais && typeof req.body.redesSociais === 'object' ? req.body.redesSociais : {},
       dataCadastro: new Date().toISOString(),
     };
@@ -235,6 +254,7 @@ app.put('/api/empreendedores/:id', verificarAutenticacao, (req, res) => {
       longitude: req.body.longitude,
       fotoPerfil: req.body.fotoPerfil,
       galeriaFotos: req.body.galeriaFotos,
+      produtos: req.body.produtos,
       redesSociais: req.body.redesSociais,
     };
 
@@ -253,6 +273,9 @@ app.put('/api/empreendedores/:id', verificarAutenticacao, (req, res) => {
       galeriaFotos: req.body.galeriaFotos === undefined
         ? (Array.isArray(atual.galeriaFotos) ? atual.galeriaFotos : [])
         : (Array.isArray(req.body.galeriaFotos) ? req.body.galeriaFotos : []),
+      produtos: req.body.produtos === undefined
+        ? (Array.isArray(atual.produtos) ? normalizarProdutos(atual.produtos) : [])
+        : normalizarProdutos(req.body.produtos),
       redesSociais: req.body.redesSociais === undefined
         ? (atual.redesSociais && typeof atual.redesSociais === 'object' ? atual.redesSociais : {})
         : (req.body.redesSociais && typeof req.body.redesSociais === 'object' ? req.body.redesSociais : {}),

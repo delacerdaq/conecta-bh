@@ -65,6 +65,13 @@ let mapa;
 let camadaMarcadores;
 const API_BASE = window.location.origin.includes('localhost:3000') ? '' : 'http://localhost:3000';
 
+function formatarPrecoProduto(preco) {
+  if (!preco) return '';
+  const valor = Number(String(preco).replace(',', '.'));
+  if (!Number.isFinite(valor)) return String(preco);
+  return valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+}
+
 function normalizarTexto(texto = '') {
   return texto
     .toString()
@@ -242,6 +249,27 @@ function renderNegocios(lista) {
       ? `<div class="card-galeria">${e.galeriaFotos.map((src, i) => `<img src="${src}" alt="Foto do negócio ${i + 1}">`).join('')}</div>`
       : '';
 
+    const produtos = Array.isArray(e.produtos) ? e.produtos.slice(0, 6) : [];
+    const produtosHtml = produtos.length
+      ? `<div class="card-produtos">
+          <h4>Produtos</h4>
+          <div class="card-produtos-grid">
+            ${produtos.map((produto, idx) => `
+              <div class="produto-card-item">
+                <div class="produto-card-foto">
+                  ${produto.foto ? `<img src="${produto.foto}" alt="Foto do produto ${idx + 1}">` : '<i class="fa-solid fa-box-open"></i>'}
+                </div>
+                <div class="produto-card-info">
+                  <h5>${produto.nome || `Produto ${idx + 1}`}</h5>
+                  ${produto.descricao ? `<p>${produto.descricao}</p>` : ''}
+                  ${formatarPrecoProduto(produto.preco) ? `<span class="produto-card-preco">${formatarPrecoProduto(produto.preco)}</span>` : ''}
+                </div>
+              </div>
+            `).join('')}
+          </div>
+        </div>`
+      : '';
+
     const sociais = [
       rs.instagram && `<a href="${rs.instagram}" target="_blank" rel="noopener" class="card-social-link instagram" title="Instagram"><i class="fa-brands fa-instagram"></i></a>`,
       rs.facebook  && `<a href="${rs.facebook}"  target="_blank" rel="noopener" class="card-social-link facebook"  title="Facebook"><i class="fa-brands fa-facebook-f"></i></a>`,
@@ -266,6 +294,7 @@ function renderNegocios(lista) {
           <a href="mailto:${e.email}" style="color: var(--gray); font-size: 0.9rem;"> ${e.email}</a></p>` : ''}
         ${sociais ? `<div class="card-social-links">${sociais}</div>` : ''}
         ${galeria}
+        ${produtosHtml}
       </div>`;
   }).join('');
 
