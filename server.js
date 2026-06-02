@@ -185,6 +185,13 @@ app.post('/api/empreendedores', verificarAutenticacao, (req, res) => {
     const raw = fs.readFileSync(DB_PATH, 'utf-8');
     const data = JSON.parse(raw);
 
+    const documentoTipo = req.body.documentoTipo === 'cnpj' ? 'cnpj' : 'cpf';
+    const cpf = typeof req.body.cpf === 'string' ? req.body.cpf : '';
+    const cnpj = typeof req.body.cnpj === 'string' ? req.body.cnpj : '';
+    const documento = typeof req.body.documento === 'string' && req.body.documento
+      ? req.body.documento
+      : (documentoTipo === 'cnpj' ? cnpj : cpf);
+
     const novo = {
       id: Date.now(),
       usuarioId: req.usuarioId,
@@ -192,7 +199,10 @@ app.post('/api/empreendedores', verificarAutenticacao, (req, res) => {
       nome: req.body.nome || '',
       email: req.body.email || '',
       telefone: req.body.telefone || '',
-      cpf: req.body.cpf || '',
+      cpf,
+      cnpj,
+      documentoTipo,
+      documento,
       nomeNegocio: req.body.nomeNegocio || '',
       tipoNegocio: req.body.tipoNegocio || 'outro',
       descricao: req.body.descricao || '',
@@ -246,6 +256,9 @@ app.put('/api/empreendedores/:id', verificarAutenticacao, (req, res) => {
       email: req.body.email,
       telefone: req.body.telefone,
       cpf: req.body.cpf,
+      cnpj: req.body.cnpj,
+      documentoTipo: req.body.documentoTipo,
+      documento: req.body.documento,
       nomeNegocio: req.body.nomeNegocio,
       tipoNegocio: req.body.tipoNegocio,
       descricao: req.body.descricao,

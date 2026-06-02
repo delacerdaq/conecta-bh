@@ -9,6 +9,9 @@
 const form = document.getElementById('form-cadastro');
 const btnSubmit = document.getElementById('btn-cadastrar');
 const feedbackEl = document.getElementById('form-feedback');
+const documentTypeEl = document.getElementById('document-type');
+const documentNumberLabelEl = document.getElementById('document-number-label');
+const documentNumberEl = document.getElementById('document-number');
 const addressInput = document.getElementById('address');
 const suggestionsEl = document.getElementById('address-suggestions');
 const addressValidationEl = document.getElementById('address-validation-msg');
@@ -69,6 +72,55 @@ function mostrarFeedback(msg, tipo) {
   feedbackEl.className = 'form-feedback ' + tipo;
   feedbackEl.style.display = 'block';
   window.scrollTo({ top: feedbackEl.offsetTop - 100, behavior: 'smooth' });
+}
+
+function extrairDigitosDocumento(valor) {
+  return (valor || '').replace(/\D/g, '');
+}
+
+function formatarCpf(valor) {
+  const digitos = extrairDigitosDocumento(valor).slice(0, 11);
+  return digitos
+    .replace(/(\d{3})(\d)/, '$1.$2')
+    .replace(/(\d{3})(\d)/, '$1.$2')
+    .replace(/(\d{3})(\d{1,2})$/, '$1-$2');
+}
+
+function formatarCnpj(valor) {
+  const digitos = extrairDigitosDocumento(valor).slice(0, 14);
+  return digitos
+    .replace(/(\d{2})(\d)/, '$1.$2')
+    .replace(/(\d{3})(\d)/, '$1.$2')
+    .replace(/(\d{3})(\d)/, '$1/$2')
+    .replace(/(\d{4})(\d{1,2})$/, '$1-$2');
+}
+
+function atualizarCampoDocumento() {
+  const tipo = documentTypeEl.value === 'cnpj' ? 'cnpj' : 'cpf';
+  documentNumberLabelEl.textContent = tipo.toUpperCase();
+  documentNumberEl.placeholder = tipo === 'cnpj' ? '00.000.000/0000-00' : '000.000.000-00';
+  documentNumberEl.value = tipo === 'cnpj'
+    ? formatarCnpj(documentNumberEl.value)
+    : formatarCpf(documentNumberEl.value);
+}
+
+function validarDocumentoSeInformado() {
+  const tipo = documentTypeEl.value === 'cnpj' ? 'cnpj' : 'cpf';
+  const digitos = extrairDigitosDocumento(documentNumberEl.value);
+
+  if (!digitos) return true;
+
+  if (tipo === 'cpf' && digitos.length !== 11) {
+    mostrarFeedback('CPF inválido. Informe os 11 dígitos.', 'erro');
+    return false;
+  }
+
+  if (tipo === 'cnpj' && digitos.length !== 14) {
+    mostrarFeedback('CNPJ inválido. Informe os 14 dígitos.', 'erro');
+    return false;
+  }
+
+  return true;
 }
 
 function limparEstadoEndereco() {
@@ -309,6 +361,17 @@ galeriaInput.addEventListener('change', async () => {
   galeriaInput.value = '';
 });
 
+documentTypeEl.addEventListener('change', atualizarCampoDocumento);
+
+documentNumberEl.addEventListener('input', () => {
+  if (documentTypeEl.value === 'cnpj') {
+    documentNumberEl.value = formatarCnpj(documentNumberEl.value);
+    return;
+  }
+
+  documentNumberEl.value = formatarCpf(documentNumberEl.value);
+});
+
 addressInput.addEventListener('input', () => {
   limparEstadoEndereco();
 
@@ -366,11 +429,23 @@ form.addEventListener('submit', async (e) => {
   btnSubmit.textContent = 'Enviando...';
   feedbackEl.style.display = 'none';
 
+  if (!validarDocumentoSeInformado()) {
+    btnSubmit.disabled = false;
+    btnSubmit.textContent = 'Cadastrar';
+    return;
+  }
+
+  const tipoDocumento = documentTypeEl.value === 'cnpj' ? 'cnpj' : 'cpf';
+  const numeroDocumento = extrairDigitosDocumento(documentNumberEl.value);
+
   const payload = {
     nome: document.getElementById('name').value.trim(),
     email: document.getElementById('email').value.trim(),
     telefone: document.getElementById('phone').value.trim(),
-    cpf: document.getElementById('cpf').value.trim(),
+    cpf: tipoDocumento === 'cpf' ? numeroDocumento : '',
+    cnpj: tipoDocumento === 'cnpj' ? numeroDocumento : '',
+    documentoTipo: tipoDocumento,
+    documento: numeroDocumento || '',
     nomeNegocio: document.getElementById('business-name').value.trim(),
     tipoNegocio: document.getElementById('business-type').value,
     descricao: document.getElementById('description').value.trim(),
@@ -437,6 +512,7 @@ form.addEventListener('submit', async (e) => {
       form.reset();
       fotoPerfilBase64 = null;
       galeriaBase64 = [];
+      atualizarCampoDocumento();
       fotoPerfPreview.innerHTML = '<i class="fa-solid fa-user"></i>';
       btnRemoverFoto.style.display = 'none';
       renderGaleriaPreview();
@@ -454,4 +530,5 @@ form.addEventListener('submit', async (e) => {
 
 document.addEventListener('DOMContentLoaded', () => {
   verificarAutenticacao();
+  atualizarCampoDocumento();
 });
