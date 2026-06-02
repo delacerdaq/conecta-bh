@@ -12,6 +12,7 @@ const feedbackEl = document.getElementById('form-feedback');
 const documentTypeEl = document.getElementById('document-type');
 const documentNumberLabelEl = document.getElementById('document-number-label');
 const documentNumberEl = document.getElementById('document-number');
+const phoneInput = document.getElementById('phone');
 const addressInput = document.getElementById('address');
 const suggestionsEl = document.getElementById('address-suggestions');
 const addressValidationEl = document.getElementById('address-validation-msg');
@@ -78,6 +79,58 @@ function extrairDigitosDocumento(valor) {
   return (valor || '').replace(/\D/g, '');
 }
 
+function formatarTelefone(valor) {
+  const digitos = extrairDigitosDocumento(valor).slice(0, 11);
+  if (digitos.length <= 2) return digitos;
+  if (digitos.length <= 6) return `(${digitos.slice(0, 2)}) ${digitos.slice(2)}`;
+  if (digitos.length <= 10) return `(${digitos.slice(0, 2)}) ${digitos.slice(2, 6)}-${digitos.slice(6)}`;
+  return `(${digitos.slice(0, 2)}) ${digitos.slice(2, 7)}-${digitos.slice(7)}`;
+}
+
+function todosDigitosIguais(valor) {
+  return /^(\d)\1+$/.test(valor);
+}
+
+function validarCpf(cpf) {
+  if (!cpf || cpf.length !== 11 || todosDigitosIguais(cpf)) return false;
+
+  let soma = 0;
+  for (let i = 0; i < 9; i += 1) {
+    soma += Number(cpf[i]) * (10 - i);
+  }
+  let resto = (soma * 10) % 11;
+  if (resto === 10) resto = 0;
+  if (resto !== Number(cpf[9])) return false;
+
+  soma = 0;
+  for (let i = 0; i < 10; i += 1) {
+    soma += Number(cpf[i]) * (11 - i);
+  }
+  resto = (soma * 10) % 11;
+  if (resto === 10) resto = 0;
+
+  return resto === Number(cpf[10]);
+}
+
+function validarCnpj(cnpj) {
+  if (!cnpj || cnpj.length !== 14 || todosDigitosIguais(cnpj)) return false;
+
+  const pesosPrimeiro = [5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2];
+  const pesosSegundo = [6, 5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2];
+
+  const calcularDigito = (base, pesos) => {
+    const soma = base.split('').reduce((acc, digito, index) => acc + Number(digito) * pesos[index], 0);
+    const resto = soma % 11;
+    return resto < 2 ? 0 : 11 - resto;
+  };
+
+  const base = cnpj.slice(0, 12);
+  const digito1 = calcularDigito(base, pesosPrimeiro);
+  const digito2 = calcularDigito(base + digito1, pesosSegundo);
+
+  return cnpj === `${base}${digito1}${digito2}`;
+}
+
 function formatarCpf(valor) {
   const digitos = extrairDigitosDocumento(valor).slice(0, 11);
   return digitos
@@ -110,13 +163,13 @@ function validarDocumentoSeInformado() {
 
   if (!digitos) return true;
 
-  if (tipo === 'cpf' && digitos.length !== 11) {
-    mostrarFeedback('CPF inválido. Informe os 11 dígitos.', 'erro');
+  if (tipo === 'cpf' && !validarCpf(digitos)) {
+    mostrarFeedback('CPF inválido. Verifique os dígitos informados.', 'erro');
     return false;
   }
 
-  if (tipo === 'cnpj' && digitos.length !== 14) {
-    mostrarFeedback('CNPJ inválido. Informe os 14 dígitos.', 'erro');
+  if (tipo === 'cnpj' && !validarCnpj(digitos)) {
+    mostrarFeedback('CNPJ inválido. Verifique os dígitos informados.', 'erro');
     return false;
   }
 
@@ -362,6 +415,10 @@ galeriaInput.addEventListener('change', async () => {
 });
 
 documentTypeEl.addEventListener('change', atualizarCampoDocumento);
+
+phoneInput.addEventListener('input', () => {
+  phoneInput.value = formatarTelefone(phoneInput.value);
+});
 
 documentNumberEl.addEventListener('input', () => {
   if (documentTypeEl.value === 'cnpj') {

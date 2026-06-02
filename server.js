@@ -32,6 +32,54 @@ function normalizarProdutos(lista) {
     .filter((produto) => produto.nome || produto.descricao || produto.foto || produto.preco);
 }
 
+function sanitizarDocumento(valor) {
+  return typeof valor === 'string' ? valor.replace(/\D/g, '') : '';
+}
+
+function todosDigitosIguais(valor) {
+  return /^(\d)\1+$/.test(valor);
+}
+
+function validarCpf(cpf) {
+  if (!cpf || cpf.length !== 11 || todosDigitosIguais(cpf)) return false;
+
+  let soma = 0;
+  for (let i = 0; i < 9; i += 1) {
+    soma += Number(cpf[i]) * (10 - i);
+  }
+  let resto = (soma * 10) % 11;
+  if (resto === 10) resto = 0;
+  if (resto !== Number(cpf[9])) return false;
+
+  soma = 0;
+  for (let i = 0; i < 10; i += 1) {
+    soma += Number(cpf[i]) * (11 - i);
+  }
+  resto = (soma * 10) % 11;
+  if (resto === 10) resto = 0;
+
+  return resto === Number(cpf[10]);
+}
+
+function validarCnpj(cnpj) {
+  if (!cnpj || cnpj.length !== 14 || todosDigitosIguais(cnpj)) return false;
+
+  const pesosPrimeiro = [5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2];
+  const pesosSegundo = [6, 5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2];
+
+  const calcularDigito = (base, pesos) => {
+    const soma = base.split('').reduce((acc, digito, index) => acc + Number(digito) * pesos[index], 0);
+    const resto = soma % 11;
+    return resto < 2 ? 0 : 11 - resto;
+  };
+
+  const base = cnpj.slice(0, 12);
+  const digito1 = calcularDigito(base, pesosPrimeiro);
+  const digito2 = calcularDigito(base + digito1, pesosSegundo);
+
+  return cnpj === `${base}${digito1}${digito2}`;
+}
+
 function verificarAutenticacao(req, res, next) {
   const token = req.headers.authorization?.split(' ')[1];
   if (!token) {
@@ -186,11 +234,32 @@ app.post('/api/empreendedores', verificarAutenticacao, (req, res) => {
     const data = JSON.parse(raw);
 
     const documentoTipo = req.body.documentoTipo === 'cnpj' ? 'cnpj' : 'cpf';
-    const cpf = typeof req.body.cpf === 'string' ? req.body.cpf : '';
-    const cnpj = typeof req.body.cnpj === 'string' ? req.body.cnpj : '';
-    const documento = typeof req.body.documento === 'string' && req.body.documento
-      ? req.body.documento
-      : (documentoTipo === 'cnpj' ? cnpj : cpf);
+    const cpfRecebido = sanitizarDocumento(req.body.cpf);
+    const cnpjRecebido = sanitizarDocumento(req.body.cnpj);
+    const documentoRecebido = sanitizarDocumento(req.body.documento);
+
+    if (cpfRecebido && !validarCpf(cpfRecebido)) {
+      return res.status(400).json({ error: 'CPF inválido.' });
+    }
+    if (cnpjRecebido && !validarCnpj(cnpjRecebido)) {
+      return res.status(400).json({ error: 'CNPJ inválido.' });
+    }
+
+    const documento = documentoTipo === 'cnpj'
+      ? (cnpjRecebido || documentoRecebido)
+      : (cpfRecebido || documentoRecebido);
+
+    if (documento) {
+      if (documentoTipo === 'cpf' && !validarCpf(documento)) {
+        return res.status(400).json({ error: 'CPF inválido.' });
+      }
+      if (documentoTipo === 'cnpj' && !validarCnpj(documento)) {
+        return res.status(400).json({ error: 'CNPJ inválido.' });
+      }
+    }
+
+    const cpf = documentoTipo === 'cpf' ? documento : '';
+    const cnpj = documentoTipo === 'cnpj' ? documento : '';
 
     const novo = {
       id: Date.now(),
@@ -251,6 +320,59 @@ app.put('/api/empreendedores/:id', verificarAutenticacao, (req, res) => {
       return res.status(403).json({ error: 'Você não tem permissão para editar este negócio.' });
     }
 
+    const houveAtualizacaoDocumento =
+      req.body.cpf !== undefined ||
+      req.body.cnpj !== undefined ||
+      req.body.documento !== undefined ||
+      req.body.documentoTipo !== undefined;
+
+    let documentoAtualizado = {};
+    if (houveAtualizacaoDocumento) {
+      const documentoTipoFinal = req.body.documentoTipo === undefined
+        ? (atual.documentoTipo === 'cnpj' ? 'cnpj' : 'cpf')
+        : (req.body.documentoTipo === 'cnpj' ? 'cnpj' : 'cpf');
+
+      const cpfAtual = sanitizarDocumento(atual.cpf);
+      const cnpjAtual = sanitizarDocumento(atual.cnpj);
+      const documentoAtual = sanitizarDocumento(atual.documento);
+
+      const cpfRecebido = req.body.cpf === undefined ? undefined : sanitizarDocumento(req.body.cpf);
+      const cnpjRecebido = req.body.cnpj === undefined ? undefined : sanitizarDocumento(req.body.cnpj);
+      const documentoRecebido = req.body.documento === undefined ? undefined : sanitizarDocumento(req.body.documento);
+
+      if (cpfRecebido !== undefined && cpfRecebido && !validarCpf(cpfRecebido)) {
+        return res.status(400).json({ error: 'CPF inválido.' });
+      }
+      if (cnpjRecebido !== undefined && cnpjRecebido && !validarCnpj(cnpjRecebido)) {
+        return res.status(400).json({ error: 'CNPJ inválido.' });
+      }
+
+      const cpfBase = cpfRecebido === undefined ? cpfAtual : cpfRecebido;
+      const cnpjBase = cnpjRecebido === undefined ? cnpjAtual : cnpjRecebido;
+
+      const documentoFinal = documentoRecebido !== undefined
+        ? documentoRecebido
+        : (documentoTipoFinal === 'cnpj'
+          ? (cnpjBase || documentoAtual)
+          : (cpfBase || documentoAtual));
+
+      if (documentoFinal) {
+        if (documentoTipoFinal === 'cpf' && !validarCpf(documentoFinal)) {
+          return res.status(400).json({ error: 'CPF inválido.' });
+        }
+        if (documentoTipoFinal === 'cnpj' && !validarCnpj(documentoFinal)) {
+          return res.status(400).json({ error: 'CNPJ inválido.' });
+        }
+      }
+
+      documentoAtualizado = {
+        documentoTipo: documentoTipoFinal,
+        documento: documentoFinal || '',
+        cpf: documentoTipoFinal === 'cpf' ? (documentoFinal || '') : '',
+        cnpj: documentoTipoFinal === 'cnpj' ? (documentoFinal || '') : '',
+      };
+    }
+
     const camposPermitidos = {
       nome: req.body.nome,
       email: req.body.email,
@@ -269,6 +391,7 @@ app.put('/api/empreendedores/:id', verificarAutenticacao, (req, res) => {
       galeriaFotos: req.body.galeriaFotos,
       produtos: req.body.produtos,
       redesSociais: req.body.redesSociais,
+      ...documentoAtualizado,
     };
 
     const atualizado = {

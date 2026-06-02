@@ -41,6 +41,41 @@ function valorRedeSocial(negocio, chave) {
   return String(negocio.redesSociais[chave] || '');
 }
 
+function extrairDigitos(valor) {
+  return String(valor || '').replace(/\D/g, '');
+}
+
+function formatarTelefone(valor) {
+  const digitos = extrairDigitos(valor).slice(0, 11);
+  if (digitos.length <= 2) return digitos;
+  if (digitos.length <= 6) return `(${digitos.slice(0, 2)}) ${digitos.slice(2)}`;
+  if (digitos.length <= 10) return `(${digitos.slice(0, 2)}) ${digitos.slice(2, 6)}-${digitos.slice(6)}`;
+  return `(${digitos.slice(0, 2)}) ${digitos.slice(2, 7)}-${digitos.slice(7)}`;
+}
+
+function obterDocumentoNegocio(negocio) {
+  const tipo = negocio?.documentoTipo === 'cnpj' ? 'cnpj' : 'cpf';
+  const numero = extrairDigitos(negocio?.documento || (tipo === 'cnpj' ? negocio?.cnpj : negocio?.cpf));
+  return { tipo, numero };
+}
+
+function mascararDocumentoParcial(tipo, numero) {
+  if (!numero) return 'Não informado';
+
+  if (tipo === 'cnpj') {
+    if (numero.length !== 14) return `CNPJ ${numero}`;
+    return `CNPJ ${numero.slice(0, 2)}.***.***/****-${numero.slice(-2)}`;
+  }
+
+  if (numero.length !== 11) return `CPF ${numero}`;
+  return `CPF ${numero.slice(0, 3)}.***.***-${numero.slice(-2)}`;
+}
+
+function formatarDocumentoResumoNegocio(negocio) {
+  const { tipo, numero } = obterDocumentoNegocio(negocio);
+  return mascararDocumentoParcial(tipo, numero);
+}
+
 function lerArquivoBase64(arquivo) {
   return new Promise((resolve, reject) => {
     if (arquivo.size > MAX_IMAGEM_BYTES) {
@@ -416,6 +451,10 @@ async function carregarPerfil() {
     document.getElementById('perfil-nome').textContent = usuario.nome;
     document.getElementById('perfil-email').textContent = usuario.email;
     document.getElementById('info-email').textContent = usuario.email;
+    const infoDocumentoEl = document.getElementById('info-documento');
+    const infoNegociosEl = document.getElementById('info-negocios');
+    if (infoDocumentoEl) infoDocumentoEl.textContent = 'Não informado';
+    if (infoNegociosEl) infoNegociosEl.textContent = '0';
 
     const dataCadastro = new Date().toLocaleDateString('pt-BR');
     document.getElementById('info-data').textContent = dataCadastro;
@@ -443,6 +482,20 @@ async function carregarMeusNegocios(usuarioId, token) {
     const meusNegocios = (data.empreendedores || []).filter(
       emp => emp.usuarioId === usuarioId
     );
+
+    const infoNegociosEl = document.getElementById('info-negocios');
+    if (infoNegociosEl) infoNegociosEl.textContent = String(meusNegocios.length);
+
+    const infoDocumentoEl = document.getElementById('info-documento');
+    if (infoDocumentoEl) {
+      const negocioComDocumento = meusNegocios.find((negocio) => {
+        const { numero } = obterDocumentoNegocio(negocio);
+        return Boolean(numero);
+      });
+      infoDocumentoEl.textContent = negocioComDocumento
+        ? formatarDocumentoResumoNegocio(negocioComDocumento)
+        : 'Não informado';
+    }
 
     const listaNegociios = document.getElementById('negocios-lista');
 
@@ -484,6 +537,7 @@ async function carregarMeusNegocios(usuarioId, token) {
       const icone = ICONES[negocio.tipoNegocio] || 'fa-building';
       const label = LABELS[negocio.tipoNegocio] || negocio.tipoNegocio;
       const dataCadastro = new Date(negocio.dataCadastro).toLocaleDateString('pt-BR');
+      const documentoResumo = formatarDocumentoResumoNegocio(negocio);
       const opcoesTipos = TIPOS_NEGOCIO
         .map((tipo) => `<option value="${tipo.value}" ${tipo.value === negocio.tipoNegocio ? 'selected' : ''}>${tipo.label}</option>`)
         .join('');
@@ -498,6 +552,7 @@ async function carregarMeusNegocios(usuarioId, token) {
           <p><strong>Categoria:</strong> ${escapeHtml(label)}</p>
           <p><strong>Descrição:</strong> ${escapeHtml(negocio.descricao)}</p>
           <p><strong>Endereço:</strong> ${escapeHtml(negocio.endereco)}</p>
+          <p><strong>Documento:</strong> ${escapeHtml(documentoResumo)}</p>
           <p><strong>Contato:</strong> ${escapeHtml(negocio.email || 'Não informado')} | ${escapeHtml(negocio.telefone || 'Não informado')}</p>
           <span class="negocio-badge">Cadastrado em ${dataCadastro}</span>
 
@@ -548,7 +603,7 @@ async function carregarMeusNegocios(usuarioId, token) {
             </div>
             <div class="form-group">
               <label>Telefone de contato</label>
-              <input type="text" name="telefone" value="${escapeHtml(negocio.telefone || '')}">
+              <input type="text" name="telefone" class="edit-telefone-input" inputmode="tel" value="${escapeHtml(negocio.telefone || '')}">
             </div>
 
             <div class="form-group">
@@ -649,6 +704,10 @@ async function carregarMeusNegocios(usuarioId, token) {
       renderFotoPerfilEdicao(formEl, negocioId);
       renderGaleriaEdicao(formEl, negocioId);
       renderProdutosEdicao(formEl, negocioId);
+      const telefoneInput = formEl.querySelector('.edit-telefone-input');
+      if (telefoneInput) {
+        telefoneInput.value = formatarTelefone(telefoneInput.value);
+      }
     });
 
   } catch (err) {
@@ -927,6 +986,12 @@ function iniciarAcoesNegocios() {
   });
 
   container.addEventListener('input', (event) => {
+    const telefoneInput = event.target.closest('.edit-telefone-input');
+    if (telefoneInput) {
+      telefoneInput.value = formatarTelefone(telefoneInput.value);
+      return;
+    }
+
     const produtoField = event.target.closest('.edit-produto-field');
     if (produtoField) {
       const negocioId = String(produtoField.dataset.negocioId || '');
