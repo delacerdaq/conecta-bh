@@ -1,6 +1,6 @@
 Nome do projeto: ConectaBH
 
-Link da publicação: (inserir após a hospedagem do site)
+Link da publicação: https://conecta-bh.onrender.com
 
 Participantes:
 
