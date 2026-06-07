@@ -3,7 +3,7 @@
  * Carrega informações do perfil do usuário e seus negócios
  */
 
-const API_BASE = window.location.port === '3000' ? '' : 'http://localhost:3000';
+const API_BASE = (window.location.hostname === 'localhost' && window.location.port !== '3000') ? 'http://localhost:3000' : '';
 const NOMINATIM_URL = 'https://nominatim.openstreetmap.org/search';
 const TIPOS_NEGOCIO = [
   { value: 'comercio', label: 'Comércio' },

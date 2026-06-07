@@ -16,7 +16,7 @@ const phoneInput = document.getElementById('phone');
 const addressInput = document.getElementById('address');
 const suggestionsEl = document.getElementById('address-suggestions');
 const addressValidationEl = document.getElementById('address-validation-msg');
-const API_BASE = window.location.origin.includes('localhost:3000') ? '' : 'http://localhost:3000';
+const API_BASE = (window.location.hostname === 'localhost' && window.location.port !== '3000') ? 'http://localhost:3000' : '';
 
 // Momento em que a página foi carregada — usado para bloquear submissões instantâneas (robôs)
 const _tempoCarregamentoCadastro = Date.now();

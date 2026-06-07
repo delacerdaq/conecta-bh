@@ -5,7 +5,7 @@ const cors = require('cors');
 const bcrypt = require('bcryptjs');
 
 const app = express();
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
 const USUARIOS_PATH = path.join(__dirname, 'data', 'usuarios.json');
 const DB_PATH = path.join(__dirname, 'data', 'empreendedores.json');
 

@@ -3,7 +3,7 @@
  * Gerencia login, registro e autenticação na plataforma ConectaBH
  */
 
-const API_BASE = window.location.origin.includes('localhost:3000') ? '' : 'http://localhost:3000';
+const API_BASE = (window.location.hostname === 'localhost' && window.location.port !== '3000') ? 'http://localhost:3000' : '';
 
 // Momento em que a página foi carregada — usado para bloquear submissões instantâneas (robôs)
 const _tempoCarregamento = Date.now();

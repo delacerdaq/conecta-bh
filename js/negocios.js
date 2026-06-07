@@ -63,7 +63,7 @@ const MAPA_PADRAO = {
 let todosEmpreendedores = [];
 let mapa;
 let camadaMarcadores;
-const API_BASE = window.location.origin.includes('localhost:3000') ? '' : 'http://localhost:3000';
+const API_BASE = (window.location.hostname === 'localhost' && window.location.port !== '3000') ? 'http://localhost:3000' : '';
 
 function formatarPrecoProduto(preco) {
   if (!preco) return '';
