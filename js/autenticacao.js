@@ -5,6 +5,9 @@
 
 const API_BASE = window.location.origin.includes('localhost:3000') ? '' : 'http://localhost:3000';
 
+// Momento em que a página foi carregada — usado para bloquear submissões instantâneas (robôs)
+const _tempoCarregamento = Date.now();
+
 const tabsLogin = document.querySelectorAll('.auth-tab');
 const formsAuth = document.querySelectorAll('.auth-form');
 const formLogin = document.getElementById('form-login');
@@ -96,8 +99,17 @@ formRegistro.addEventListener('submit', async (e) => {
     return;
   }
 
-  if (senha.length < 6) {
-    mostrarFeedback(feedbackRegistro, 'A senha deve ter pelo menos 6 caracteres.', 'erro');
+  if (senha.length < 8 || !/[a-zA-Z]/.test(senha) || !/\d/.test(senha)) {
+    mostrarFeedback(feedbackRegistro, 'A senha deve ter pelo menos 8 caracteres, incluindo letras e números.', 'erro');
+    return;
+  }
+
+  // Bloqueia robôs: campo honeypot deve estar vazio
+  if (document.getElementById('_gotcha_reg')?.value) return;
+
+  // Bloqueia submissão instantânea (robô preenche o formulário em milissegundos)
+  if (Date.now() - _tempoCarregamento < 3000) {
+    mostrarFeedback(feedbackRegistro, 'Ação muito rápida. Aguarde alguns segundos e tente novamente.', 'erro');
     return;
   }
 
@@ -110,7 +122,12 @@ formRegistro.addEventListener('submit', async (e) => {
     const res = await fetch(`${API_BASE}/api/auth/register`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ nome, email, senha }),
+      body: JSON.stringify({
+        nome,
+        email,
+        senha,
+        _gotcha: document.getElementById('_gotcha_reg')?.value || '',
+      }),
     });
 
     const data = await res.json();

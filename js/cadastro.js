@@ -18,6 +18,9 @@ const suggestionsEl = document.getElementById('address-suggestions');
 const addressValidationEl = document.getElementById('address-validation-msg');
 const API_BASE = window.location.origin.includes('localhost:3000') ? '' : 'http://localhost:3000';
 
+// Momento em que a página foi carregada — usado para bloquear submissões instantâneas (robôs)
+const _tempoCarregamentoCadastro = Date.now();
+
 const NOMINATIM_URL = 'https://nominatim.openstreetmap.org/search';
 let sugestoesEndereco = [];
 let enderecoSelecionado = null;
@@ -28,6 +31,9 @@ let fotoPerfilBase64 = null;
 let galeriaBase64 = [];
 const MAX_IMAGEM_BYTES = 2 * 1024 * 1024;
 const MAX_GALERIA_FOTOS = 5;
+
+// Momento em que a página foi carregada — bloqueia submissões instantâneas (robôs)
+const _tempoCadastro = Date.now();
 
 function verificarAutenticacao() {
   const token = localStorage.getItem('conectabh_token');
@@ -477,8 +483,28 @@ suggestionsEl.addEventListener('click', (event) => {
 form.addEventListener('submit', async (e) => {
   e.preventDefault();
 
+  // Bloqueia robôs: campo honeypot deve estar vazio
+  if (document.getElementById('_gotcha_cad')?.value) {
+    return;
+  }
+
+  // Bloqueia submissão instantânea típica de bots
+  if (Date.now() - _tempoCarregamentoCadastro < 3000) {
+    mostrarFeedback('Ação muito rápida. Aguarde alguns segundos e tente novamente.', 'erro');
+    return;
+  }
+
   const token = verificarAutenticacao();
   if (!token) {
+    return;
+  }
+
+  // Bloqueia robôs: campo honeypot deve estar vazio
+  if (document.getElementById('_gotcha_cad')?.value) return;
+
+  // Bloqueia submissão instantânea (robô preenche o formulário em milissegundos)
+  if (Date.now() - _tempoCadastro < 4000) {
+    mostrarFeedback('Ação muito rápida. Aguarde alguns segundos e tente novamente.', 'erro');
     return;
   }
 
@@ -518,6 +544,7 @@ form.addEventListener('submit', async (e) => {
       linkedin:  document.getElementById('social-linkedin').value.trim()  || null,
       website:   document.getElementById('social-website').value.trim()   || null,
     },
+    _gotcha: document.getElementById('_gotcha_cad')?.value || '',
   };
 
   const camposObrigatorios = [

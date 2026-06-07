@@ -14,6 +14,89 @@ app.use(express.json({ limit: '20mb' }));
 app.use(express.urlencoded({ extended: true, limit: '20mb' }));
 app.use(express.static(__dirname));
 
+// ─── Segurança ───────────────────────────────────────────────────────────────
+
+// Rate limiter em memória (sem dependências extras)
+const _rlMap = new Map();
+function criarRateLimiter({ max, windowMs, mensagem }) {
+  const bucket = mensagem || 'default';
+  return (req, res, next) => {
+    const ip = (req.headers['x-forwarded-for'] || req.ip || req.socket?.remoteAddress || 'unknown')
+      .split(',')[0].trim();
+    const chave = `${bucket}:${ip}`;
+    const agora = Date.now();
+    const entrada = _rlMap.get(chave);
+    if (!entrada || agora > entrada.resetTime) {
+      _rlMap.set(chave, { count: 1, resetTime: agora + windowMs });
+      return next();
+    }
+    if (entrada.count >= max) {
+      return res.status(429).json({ error: mensagem || 'Muitas tentativas. Aguarde e tente novamente.' });
+    }
+    entrada.count += 1;
+    next();
+  };
+}
+
+// 5 cadastros por IP a cada 15 min; 10 logins por IP a cada 15 min; 10 negócios por IP/hora
+const limitarRegistro = criarRateLimiter({ max: 5,  windowMs: 15 * 60 * 1000, mensagem: 'Muitos cadastros seguidos. Aguarde 15 minutos.' });
+const limitarLogin    = criarRateLimiter({ max: 10, windowMs: 15 * 60 * 1000, mensagem: 'Muitas tentativas de login. Aguarde 15 minutos.' });
+const limitarNegocio  = criarRateLimiter({ max: 10, windowMs: 60 * 60 * 1000, mensagem: 'Limite de cadastros por hora atingido. Aguarde.' });
+
+/** Remove tags HTML e limita o comprimento de campos de texto livre */
+function sanitizarTexto(valor, maxLen) {
+  if (typeof valor !== 'string') return '';
+  return valor.replace(/<[^>]*>/g, '').trim().slice(0, maxLen || 1000);
+}
+
+/** Sanitiza cada campo do objeto de redes sociais */
+function sanitizarRedesSociais(obj) {
+  if (!obj || typeof obj !== 'object') return {};
+  const campos = ['instagram', 'facebook', 'whatsapp', 'linkedin', 'website'];
+  const resultado = {};
+  for (const campo of campos) {
+    const val = typeof obj[campo] === 'string'
+      ? obj[campo].replace(/<[^>]*>/g, '').trim().slice(0, 200)
+      : null;
+    resultado[campo] = val || null;
+  }
+  return resultado;
+}
+
+/** Valida formato de e-mail */
+function validarEmail(email) {
+  return typeof email === 'string'
+    && /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email.trim())
+    && email.trim().length <= 150;
+}
+
+/** Exige pelo menos 8 chars, com letras e números */
+function validarForcaSenha(senha) {
+  if (typeof senha !== 'string' || senha.length < 8) return false;
+  if (!/[a-zA-Z]/.test(senha)) return false;
+  if (!/\d/.test(senha)) return false;
+  return true;
+}
+
+/** Verifica se o valor é um data URI de imagem válido (JPEG, PNG, WEBP ou GIF) */
+function validarBase64Imagem(valor) {
+  if (!valor) return true;
+  if (typeof valor !== 'string') return false;
+  return /^data:image\/(jpeg|jpg|png|webp|gif);base64,/.test(valor);
+}
+
+/** Retorna true (e responde 400) se o campo honeypot estiver preenchido — bloqueia robôs */
+function verificarHoneypot(req, res) {
+  const val = req.body?._gotcha;
+  if (typeof val === 'string' && val !== '') {
+    res.status(400).json({ error: 'Requisição bloqueada.' });
+    return true;
+  }
+  return false;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+
 function normalizarProdutos(lista) {
   if (!Array.isArray(lista)) return [];
 
@@ -102,31 +185,51 @@ function verificarAutenticacao(req, res, next) {
 /**
  * POST /api/auth/register
  * Registra um novo usuário com email e senha criptografada
+ * Proteções: rate limit, honeypot, validação de e-mail, força de senha, sanitização do nome
  */
-app.post('/api/auth/register', async (req, res) => {
+app.post('/api/auth/register', limitarRegistro, async (req, res) => {
   try {
+    if (verificarHoneypot(req, res)) return;
+
     const { nome, email, senha } = req.body;
 
     if (!nome || !email || !senha) {
       return res.status(400).json({ error: 'Nome, email e senha são obrigatórios.' });
     }
 
+    const nomeSanitizado = sanitizarTexto(nome, 100);
+    if (nomeSanitizado.length < 2) {
+      return res.status(400).json({ error: 'Nome deve ter pelo menos 2 caracteres.' });
+    }
+
+    if (!validarEmail(email)) {
+      return res.status(400).json({ error: 'Formato de e-mail inválido.' });
+    }
+
+    if (!validarForcaSenha(senha)) {
+      return res.status(400).json({ error: 'A senha deve ter pelo menos 8 caracteres com letras e números.' });
+    }
+
+    const emailNormalizado = email.trim().toLowerCase();
+
     let dados = { usuarios: [] };
     if (fs.existsSync(USUARIOS_PATH)) {
       dados = JSON.parse(fs.readFileSync(USUARIOS_PATH, 'utf-8'));
     }
 
-    if (dados.usuarios.some(u => u.email === email)) {
+    if (dados.usuarios.some(u => u.email.toLowerCase() === emailNormalizado)) {
       return res.status(400).json({ error: 'Email já cadastrado.' });
     }
 
     const senhaCriptografada = await bcrypt.hash(senha, 10);
-    const token = Buffer.from(`${email}:${Date.now()}`).toString('base64');
+    const token = Buffer.from(
+      `${emailNormalizado}:${Date.now()}:${Math.random().toString(36).slice(2)}`
+    ).toString('base64');
 
     const novoUsuario = {
       id: Date.now(),
-      nome,
-      email,
+      nome: nomeSanitizado,
+      email: emailNormalizado,
       senha: senhaCriptografada,
       token,
       dataCadastro: new Date().toISOString(),
@@ -139,7 +242,7 @@ app.post('/api/auth/register', async (req, res) => {
       success: true,
       message: 'Usuário registrado com sucesso!',
       token,
-      usuario: { id: novoUsuario.id, nome, email },
+      usuario: { id: novoUsuario.id, nome: nomeSanitizado, email: emailNormalizado },
     });
   } catch (err) {
     console.error('Erro ao registrar:', err);
@@ -150,8 +253,9 @@ app.post('/api/auth/register', async (req, res) => {
 /**
  * POST /api/auth/login
  * Faz login com email e senha, retorna token
+ * Proteções: rate limit, busca de e-mail insensível a maiúsculas
  */
-app.post('/api/auth/login', async (req, res) => {
+app.post('/api/auth/login', limitarLogin, async (req, res) => {
   try {
     const { email, senha } = req.body;
 
@@ -164,7 +268,8 @@ app.post('/api/auth/login', async (req, res) => {
     }
 
     const dados = JSON.parse(fs.readFileSync(USUARIOS_PATH, 'utf-8'));
-    const usuario = dados.usuarios.find(u => u.email === email);
+    const emailBusca = email.trim().toLowerCase();
+    const usuario = dados.usuarios.find(u => u.email.toLowerCase() === emailBusca);
 
     if (!usuario) {
       return res.status(401).json({ error: 'Email ou senha incorretos.' });
@@ -227,11 +332,39 @@ app.get('/api/empreendedores', (req, res) => {
 /**
  * POST /api/empreendedores
  * Cadastra novo empreendedor (requer autenticação)
+ * Proteções: rate limit, honeypot, sanitização de texto, validação de imagens base64
  */
-app.post('/api/empreendedores', verificarAutenticacao, (req, res) => {
+app.post('/api/empreendedores', verificarAutenticacao, limitarNegocio, (req, res) => {
   try {
     const raw = fs.readFileSync(DB_PATH, 'utf-8');
     const data = JSON.parse(raw);
+
+    if (verificarHoneypot(req, res)) return;
+
+    // Sanitização e validação de campos de texto livre
+    const nomeNegocioSanitizado = sanitizarTexto(req.body.nomeNegocio, 100);
+    const descricaoSanitizada   = sanitizarTexto(req.body.descricao, 1500);
+    const enderecoSanitizado    = sanitizarTexto(req.body.endereco, 250);
+    const telefoneSanitizado    = sanitizarTexto(req.body.telefone, 25);
+    const nomeSanitizado        = sanitizarTexto(req.body.nome, 100);
+
+    if (!nomeNegocioSanitizado || !descricaoSanitizada || !enderecoSanitizado) {
+      return res.status(400).json({ error: 'Nome do negócio, descrição e endereço são obrigatórios.' });
+    }
+
+    // Validação de imagens (deve ser data URI de imagem válida)
+    const fotoPerfilNegocio = req.body.fotoPerfil || null;
+    if (!validarBase64Imagem(fotoPerfilNegocio)) {
+      return res.status(400).json({ error: 'Formato da foto de perfil inválido.' });
+    }
+
+    const galeriaFotosNegocio = Array.isArray(req.body.galeriaFotos) ? req.body.galeriaFotos : [];
+    if (galeriaFotosNegocio.some((f) => !validarBase64Imagem(f))) {
+      return res.status(400).json({ error: 'Uma ou mais fotos da galeria têm formato inválido.' });
+    }
+
+    // Sanitização de redes sociais
+    const redesSociaisSanitizadas = sanitizarRedesSociais(req.body.redesSociais);
 
     const documentoTipo = req.body.documentoTipo === 'cnpj' ? 'cnpj' : 'cpf';
     const cpfRecebido = sanitizarDocumento(req.body.cpf);
@@ -265,23 +398,23 @@ app.post('/api/empreendedores', verificarAutenticacao, (req, res) => {
       id: Date.now(),
       usuarioId: req.usuarioId,
       usuarioEmail: req.usuarioEmail,
-      nome: req.body.nome || '',
-      email: req.body.email || '',
-      telefone: req.body.telefone || '',
+      nome: nomeSanitizado,
+      email: sanitizarTexto(req.body.email, 150),
+      telefone: telefoneSanitizado,
       cpf,
       cnpj,
       documentoTipo,
       documento,
-      nomeNegocio: req.body.nomeNegocio || '',
+      nomeNegocio: nomeNegocioSanitizado,
       tipoNegocio: req.body.tipoNegocio || 'outro',
-      descricao: req.body.descricao || '',
-      endereco: req.body.endereco || '',
+      descricao: descricaoSanitizada,
+      endereco: enderecoSanitizado,
       latitude: Number.isFinite(Number(req.body.latitude)) ? Number(req.body.latitude) : null,
       longitude: Number.isFinite(Number(req.body.longitude)) ? Number(req.body.longitude) : null,
-      fotoPerfil: req.body.fotoPerfil || null,
-      galeriaFotos: Array.isArray(req.body.galeriaFotos) ? req.body.galeriaFotos : [],
+      fotoPerfil: fotoPerfilNegocio,
+      galeriaFotos: galeriaFotosNegocio,
       produtos: normalizarProdutos(req.body.produtos),
-      redesSociais: req.body.redesSociais && typeof req.body.redesSociais === 'object' ? req.body.redesSociais : {},
+      redesSociais: redesSociaisSanitizadas,
       dataCadastro: new Date().toISOString(),
     };
 
@@ -299,6 +432,7 @@ app.post('/api/empreendedores', verificarAutenticacao, (req, res) => {
 /**
  * PUT /api/empreendedores/:id
  * Atualiza um empreendedor do próprio usuário autenticado
+ * Proteções: sanitização de texto, validação de imagens base64, sanitização de redes sociais
  */
 app.put('/api/empreendedores/:id', verificarAutenticacao, (req, res) => {
   try {
@@ -318,6 +452,27 @@ app.put('/api/empreendedores/:id', verificarAutenticacao, (req, res) => {
     const atual = data.empreendedores[index];
     if (atual.usuarioId !== req.usuarioId) {
       return res.status(403).json({ error: 'Você não tem permissão para editar este negócio.' });
+    }
+
+    // Sanitização de campos de texto livre antes de qualquer uso
+    if (req.body.nomeNegocio !== undefined) req.body.nomeNegocio = sanitizarTexto(req.body.nomeNegocio, 100);
+    if (req.body.descricao   !== undefined) req.body.descricao   = sanitizarTexto(req.body.descricao, 1500);
+    if (req.body.endereco    !== undefined) req.body.endereco    = sanitizarTexto(req.body.endereco, 250);
+    if (req.body.telefone    !== undefined) req.body.telefone    = sanitizarTexto(req.body.telefone, 25);
+    if (req.body.nome        !== undefined) req.body.nome        = sanitizarTexto(req.body.nome, 100);
+    if (req.body.email       !== undefined) req.body.email       = sanitizarTexto(req.body.email, 150);
+
+    // Validação de imagens
+    if (req.body.fotoPerfil !== undefined && !validarBase64Imagem(req.body.fotoPerfil)) {
+      return res.status(400).json({ error: 'Formato da foto de perfil inválido.' });
+    }
+    if (Array.isArray(req.body.galeriaFotos) && req.body.galeriaFotos.some((f) => !validarBase64Imagem(f))) {
+      return res.status(400).json({ error: 'Uma ou mais fotos da galeria têm formato inválido.' });
+    }
+
+    // Sanitização de redes sociais
+    if (req.body.redesSociais !== undefined) {
+      req.body.redesSociais = sanitizarRedesSociais(req.body.redesSociais);
     }
 
     const houveAtualizacaoDocumento =

@@ -238,6 +238,11 @@
               <label for="registro-senha-confirmacao">Confirmar Senha</label>
               <input type="password" id="registro-senha-confirmacao" name="senha-confirmacao" required>
             </div>
+            <!-- Honeypot: invisível para humanos, robôs costumam preencher -->
+            <div aria-hidden="true" style="position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden;" tabindex="-1">
+              <label for="_gotcha_reg">Deixe em branco</label>
+              <input type="text" id="_gotcha_reg" name="_gotcha" tabindex="-1" autocomplete="off" value="">
+            </div>
             <button type="submit" class="btn-auth primary">Criar Conta</button>
           </form>
           <div class="form-link">
